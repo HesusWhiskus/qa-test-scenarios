@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 key={view}
                 onClick={() => !disabled && !runMissing && ctx.navigate(view)}
                 disabled={disabled || runMissing}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors ${
                   active
                     ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-medium shadow-xs'
                     : disabled || runMissing

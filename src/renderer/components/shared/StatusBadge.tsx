@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { Status } from '../../types/schema';
 import { ChevronDown } from 'lucide-react';
 
@@ -41,23 +42,47 @@ interface SelectorProps {
   onSelect: (status: Status) => void;
 }
 
+const DROPDOWN_HEIGHT = 190;
+
 export function StatusSelector({ status, onSelect }: SelectorProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openAbove = spaceBelow < DROPDOWN_HEIGHT && rect.top > DROPDOWN_HEIGHT;
+
+    setPos({
+      left: rect.left,
+      top: openAbove ? rect.top - DROPDOWN_HEIGHT - 4 : rect.bottom + 4,
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    updatePosition();
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        triggerRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) return;
+      setOpen(false);
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open, updatePosition]);
 
   const c = statusConfig[status];
 
   return (
-    <div ref={ref} className="relative" onClick={e => e.stopPropagation()}>
+    <div ref={triggerRef} onClick={e => e.stopPropagation()}>
       <div className="flex items-center">
         <button
           onClick={() => onSelect(status === 'pass' ? 'pending' : 'pass')}
@@ -73,8 +98,12 @@ export function StatusSelector({ status, onSelect }: SelectorProps) {
         </button>
       </div>
 
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-float border border-slate-200 dark:border-slate-700 py-1.5 min-w-[130px] animate-slide-up">
+      {open && pos && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ position: 'fixed', top: pos.top, left: pos.left }}
+          className="z-[9999] bg-white dark:bg-slate-800 rounded-lg shadow-float border border-slate-200 dark:border-slate-700 py-1.5 min-w-[130px]"
+        >
           {ALL_STATUSES.map(s => {
             const sc = statusConfig[s];
             const active = s === status;
@@ -89,7 +118,8 @@ export function StatusSelector({ status, onSelect }: SelectorProps) {
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

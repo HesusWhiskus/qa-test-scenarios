@@ -36,18 +36,18 @@ export function Home() {
       <div className="grid grid-cols-2 gap-3 mb-10">
         <button
           onClick={() => setShowNew(true)}
-          className="group flex flex-col items-center gap-2.5 p-5 rounded-xl bg-white dark:bg-slate-900 shadow-card hover:shadow-elevated border border-slate-200/60 dark:border-slate-800 transition-all duration-200 hover:-translate-y-0.5"
+          className="group flex flex-col items-center gap-2.5 p-5 rounded-lg bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-shadow"
         >
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center">
             <FilePlus size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Nowy scenariusz</span>
         </button>
         <button
           onClick={openScenario}
-          className="group flex flex-col items-center gap-2.5 p-5 rounded-xl bg-white dark:bg-slate-900 shadow-card hover:shadow-elevated border border-slate-200/60 dark:border-slate-800 transition-all duration-200 hover:-translate-y-0.5"
+          className="group flex flex-col items-center gap-2.5 p-5 rounded-lg bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-shadow"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
             <FolderOpen size={20} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Otwórz plik</span>
@@ -55,7 +55,7 @@ export function Home() {
       </div>
 
       {showNew && (
-        <div className="mb-8 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800 animate-fade-in">
+        <div className="mb-8 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800">
           <label className="block text-xs font-medium mb-2 text-slate-500">Nazwa scenariusza</label>
           <div className="flex gap-2">
             <input
@@ -85,7 +85,7 @@ export function Home() {
             <button
               key={tpl.id}
               onClick={() => loadFromTemplate(tpl.scenario)}
-              className="group w-full flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-all duration-200 text-left"
+              className="group w-full flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-shadow text-left"
             >
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${templateColors[i % templateColors.length]} flex items-center justify-center flex-shrink-0`}>
                 <LayoutTemplate size={14} className="text-white" />

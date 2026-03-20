@@ -136,9 +136,9 @@ export function Runner() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-5">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{scenario.meta.title}</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{scenario.meta.title}</h2>
           {run.meta.name && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{run.meta.name}</p>}
         </div>
         <button
@@ -151,7 +151,7 @@ export function Runner() {
       </div>
 
       {showShortcuts && (
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl text-sm space-y-1 border border-blue-100 dark:border-blue-900 animate-fade-in">
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-sm space-y-1 border border-blue-100 dark:border-blue-900">
           <p className="font-medium mb-1 text-blue-700 dark:text-blue-300">Skróty klawiszowe:</p>
           <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">↑↓</kbd> lub <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">K/J</kbd> nawigacja</p>
           <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">P</kbd> pass · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">F</kbd> fail · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">B</kbd> blocked · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">S</kbd> skip</p>
@@ -202,7 +202,7 @@ export function Runner() {
           return (
             <div key={section.id}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className={`font-semibold tracking-tight ${section.level === 1 ? 'text-base text-slate-800 dark:text-slate-200' : 'text-sm text-slate-500 dark:text-slate-400'}`}>
+                <h3 className={`font-semibold ${section.level === 1 ? 'text-base text-slate-800 dark:text-slate-200' : 'text-sm text-slate-500 dark:text-slate-400'}`}>
                   {section.title}
                 </h3>
                 <div className="flex items-center gap-1.5">
@@ -218,7 +218,7 @@ export function Runner() {
               <div className="mb-2.5">
                 <ProgressBar {...sectionStats} showLabel={false} />
               </div>
-              <div className="space-y-px bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+              <div className="space-y-px bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800 overflow-hidden">
                 {items.map(({ item, flatIdx }) => {
                   const result = run.results[item.id];
                   const status: Status = result?.status || 'pending';
@@ -232,7 +232,7 @@ export function Runner() {
                       key={item.id}
                       id={`runner-item-${item.id}`}
                       onClick={() => setSelectedIdx(flatIdx)}
-                      className={`px-3 py-2 transition-all duration-100 cursor-pointer border-l-2 ${
+                      className={`px-3 py-2 transition-colors cursor-pointer border-l-2 ${
                         isSelected
                           ? 'bg-blue-50/70 dark:bg-blue-950/20 border-l-blue-500'
                           : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/30 border-l-transparent'
@@ -265,7 +265,7 @@ export function Runner() {
                         </button>
                       </div>
                       {isNotesOpen && (
-                        <div className="mt-2 ml-16 space-y-2 animate-fade-in">
+                        <div className="mt-2 ml-16 space-y-2">
                           <textarea
                             value={notes}
                             onChange={e => updateResult(run.id, item.id, { notes: e.target.value })}

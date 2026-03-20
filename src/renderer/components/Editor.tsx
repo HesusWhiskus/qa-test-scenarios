@@ -55,7 +55,7 @@ export function Editor() {
         <input
           value={scenario.meta.title}
           onChange={e => updateMeta({ title: e.target.value })}
-          className="text-2xl font-bold tracking-tight w-full bg-transparent border-b-2 border-transparent focus:border-blue-500 focus:outline-none pb-1 mb-3 text-slate-900 dark:text-slate-100"
+          className="text-2xl font-bold w-full bg-transparent border-b-2 border-transparent focus:border-blue-500 focus:outline-none pb-1 mb-3 text-slate-900 dark:text-slate-100"
           placeholder="Nazwa scenariusza"
         />
         <textarea
@@ -71,7 +71,7 @@ export function Editor() {
         {scenario.sections.map((section, sIdx) => {
           const expanded = expandedSections.has(section.id);
           return (
-            <div key={section.id} className="bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+            <div key={section.id} className="bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800 overflow-hidden">
               <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/30">
                 <button onClick={() => toggleExpand(section.id)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                   <ChevronRight size={16} className={`transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`} />
@@ -92,7 +92,7 @@ export function Editor() {
                 <span className="text-[11px] text-slate-400">{section.items.length} poz.</span>
                 <button
                   onClick={() => toggleTag(section.id, 'regression')}
-                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-all duration-150 ${
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                     section.visibilityTags.includes('regression')
                       ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400'
                       : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-orange-300 hover:text-orange-500'
@@ -102,7 +102,7 @@ export function Editor() {
                 </button>
                 <button
                   onClick={() => toggleTag(section.id, 'full')}
-                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-all duration-150 ${
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                     section.visibilityTags.includes('full')
                       ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800 text-violet-600 dark:text-violet-400'
                       : 'border-slate-200 dark:border-slate-700 text-slate-400 hover:border-violet-300 hover:text-violet-500'
@@ -153,7 +153,7 @@ export function Editor() {
         })}
       </div>
 
-      <div className="flex items-center gap-2 p-3 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 shadow-xs">
+      <div className="flex items-center gap-2 p-3 bg-white dark:bg-slate-900 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 shadow-xs">
         <select
           value={newSectionLevel}
           onChange={e => setNewSectionLevel(Number(e.target.value) as 1 | 2)}

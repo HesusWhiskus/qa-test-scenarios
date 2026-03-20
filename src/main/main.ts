@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu, session } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, session, screen } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ScenarioSchema } from '../renderer/types/schema';
@@ -7,7 +7,11 @@ declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
 const IS_DEV = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
-const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
+
+// Stable userData path independent of Squirrel version subdirectories
+app.setAppLogsPath();
+const USER_DATA_DIR = app.getPath('userData');
+const SETTINGS_PATH = path.join(USER_DATA_DIR, 'settings.json');
 
 // ---------------------------------------------------------------------------
 // Path validation — prevents path traversal attacks from renderer
@@ -42,8 +46,17 @@ function assertImageExtension(filename: string): void {
 // Settings persistence
 // ---------------------------------------------------------------------------
 
+interface WindowBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+
 interface AppSettings {
   recentFiles: string[];
+  windowBounds?: WindowBounds;
 }
 
 function loadSettings(): AppSettings {
@@ -52,6 +65,19 @@ function loadSettings(): AppSettings {
   } catch {
     return { recentFiles: [] };
   }
+}
+
+function isVisibleOnAnyDisplay(bounds: WindowBounds): boolean {
+  const displays = screen.getAllDisplays();
+  return displays.some(display => {
+    const { x, y, width, height } = display.workArea;
+    return (
+      bounds.x + bounds.width > x &&
+      bounds.x < x + width &&
+      bounds.y + bounds.height > y &&
+      bounds.y < y + height
+    );
+  });
 }
 
 function saveSettings(settings: AppSettings): void {
@@ -70,12 +96,27 @@ function addRecentFile(filePath: string): void {
 
 let mainWindow: BrowserWindow | null = null;
 
+function saveWindowBounds() {
+  if (!mainWindow) return;
+  const settings = loadSettings();
+  const maximized = mainWindow.isMaximized();
+  const bounds = maximized ? (settings.windowBounds || mainWindow.getBounds()) : mainWindow.getBounds();
+  settings.windowBounds = { ...bounds, maximized };
+  saveSettings(settings);
+}
+
 function createWindow() {
   Menu.setApplicationMenu(null);
 
+  const settings = loadSettings();
+  const saved = settings.windowBounds;
+  const usesSaved = saved && isVisibleOnAnyDisplay(saved);
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: usesSaved ? saved.width : 1280,
+    height: usesSaved ? saved.height : 800,
+    x: usesSaved ? saved.x : undefined,
+    y: usesSaved ? saved.y : undefined,
     minWidth: 900,
     minHeight: 600,
     webPreferences: {
@@ -87,11 +128,17 @@ function createWindow() {
     show: false,
   });
 
-  // Block navigation away from the app
+  if (usesSaved && saved.maximized) {
+    mainWindow.maximize();
+  }
+
+  mainWindow.on('close', saveWindowBounds);
+  mainWindow.on('resize', saveWindowBounds);
+  mainWindow.on('move', saveWindowBounds);
+
   mainWindow.webContents.on('will-navigate', (e) => e.preventDefault());
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' as const }));
 
-  // Block DevTools in production
   if (!IS_DEV) {
     mainWindow.webContents.on('before-input-event', (event, input) => {
       const isDevToolsShortcut =

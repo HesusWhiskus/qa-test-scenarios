@@ -23,13 +23,13 @@ export function RunList() {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-      <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800">
+      <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center flex-shrink-0">
             <FileText size={18} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">{scenario.meta.title}</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{scenario.meta.title}</h2>
             {scenario.meta.description && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{scenario.meta.description}</p>
             )}
@@ -49,7 +49,7 @@ export function RunList() {
       </div>
 
       {showNew && (
-        <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800 animate-fade-in">
+        <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800">
           <h3 className="font-semibold text-sm mb-3 text-slate-800 dark:text-slate-200">Nowy przebieg</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             {[
@@ -87,7 +87,7 @@ export function RunList() {
             const stats = getRunStats(run, scenario);
             const isComplete = !!run.meta.completedAt;
             return (
-              <div key={run.id} className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-card border border-slate-200/60 dark:border-slate-800 hover:shadow-elevated transition-shadow duration-200">
+              <div key={run.id} className="p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800 hover:shadow-card transition-shadow">
                 <div className="flex items-start justify-between mb-2.5">
                   <div>
                     <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-200">
