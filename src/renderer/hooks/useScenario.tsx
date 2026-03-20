@@ -3,7 +3,7 @@ import type { Scenario, Section, Item, Run, RunMeta, ItemResult, Status } from '
 import { createScenario, createSection, createItem, createRun } from '../types/schema';
 import * as ipc from '../lib/ipc';
 
-export type View = 'home' | 'editor' | 'runs' | 'runner' | 'export' | 'help';
+export type View = 'home' | 'editor' | 'runs' | 'runner' | 'export' | 'help' | 'settings';
 
 interface PendingOpen {
   scenario: Scenario;

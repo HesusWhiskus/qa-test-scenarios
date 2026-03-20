@@ -1,8 +1,7 @@
 import { useScenario, type View } from '../hooks/useScenario';
-import { useTheme } from '../hooks/useTheme';
 import {
-  Home, FileEdit, Play, History, FileDown, Moon, Sun,
-  Save, FolderOpen, Copy, HelpCircle, FlaskConical,
+  Home, FileEdit, Play, History, FileDown,
+  Save, FolderOpen, Copy, HelpCircle, FlaskConical, SlidersHorizontal,
 } from 'lucide-react';
 
 const navItems: { view: View; icon: typeof Home; label: string; needsScenario: boolean }[] = [
@@ -12,11 +11,11 @@ const navItems: { view: View; icon: typeof Home; label: string; needsScenario: b
   { view: 'runner', icon: Play, label: 'Wykonanie', needsScenario: true },
   { view: 'export', icon: FileDown, label: 'Eksport', needsScenario: true },
   { view: 'help', icon: HelpCircle, label: 'Pomoc', needsScenario: false },
+  { view: 'settings', icon: SlidersHorizontal, label: 'Ustawienia', needsScenario: false },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const ctx = useScenario();
-  const { dark, toggle } = useTheme();
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
@@ -71,15 +70,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="px-3 py-2.5 border-t border-slate-100 dark:border-slate-800">
-          <button
-            onClick={toggle}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[13px] rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-400 transition-colors"
-          >
-            {dark ? <Sun size={15} /> : <Moon size={15} />}
-            {dark ? 'Tryb jasny' : 'Tryb ciemny'}
-          </button>
-        </div>
       </aside>
 
       <main className="flex-1 overflow-y-auto">

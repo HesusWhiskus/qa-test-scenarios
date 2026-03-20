@@ -36,3 +36,13 @@
     @apply bg-slate-400 dark:bg-slate-500;
   }
 }
+
+/* Density: compact mode reduces padding in runner items */
+[data-density="compact"] .runner-item {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+[data-density="compact"] .runner-section-gap {
+  margin-bottom: 0.75rem;
+}

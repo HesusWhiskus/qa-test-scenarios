@@ -7,6 +7,7 @@ import { RunList } from './components/RunList';
 import { Runner } from './components/Runner';
 import { ExportView } from './components/ExportView';
 import { Help } from './components/Help';
+import { Settings } from './components/Settings';
 import { OpenDialog } from './components/OpenDialog';
 
 function AppContent() {
@@ -18,6 +19,7 @@ function AppContent() {
     case 'runner': return <Runner />;
     case 'export': return <ExportView />;
     case 'help': return <Help />;
+    case 'settings': return <Settings />;
   }
 }
 

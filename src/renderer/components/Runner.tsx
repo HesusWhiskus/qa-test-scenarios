@@ -188,7 +188,7 @@ export function Runner() {
         ))}
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 runner-section-gap">
         {groupedSections.map(({ section, items }) => {
           const sectionAllItems = section.items;
           const sectionStats = {
@@ -232,7 +232,7 @@ export function Runner() {
                       key={item.id}
                       id={`runner-item-${item.id}`}
                       onClick={() => setSelectedIdx(flatIdx)}
-                      className={`px-3 py-2 transition-colors cursor-pointer border-l-2 ${
+                      className={`runner-item px-3 py-2 transition-colors cursor-pointer border-l-2 ${
                         isSelected
                           ? 'bg-blue-50/70 dark:bg-blue-950/20 border-l-blue-500'
                           : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/30 border-l-transparent'
