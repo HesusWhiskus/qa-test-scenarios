@@ -1,11 +1,46 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, session } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import { ScenarioSchema } from '../renderer/types/schema';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
+const IS_DEV = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
+
+// ---------------------------------------------------------------------------
+// Path validation — prevents path traversal attacks from renderer
+// ---------------------------------------------------------------------------
+
+function assertJsonExtension(filePath: string): void {
+  if (path.extname(filePath).toLowerCase() !== '.json') {
+    throw new Error(`Rejected non-JSON path: ${filePath}`);
+  }
+}
+
+function assertSafeFilename(filename: string): void {
+  if (
+    filename.includes('..') ||
+    filename.includes('/') ||
+    filename.includes('\\') ||
+    filename !== path.basename(filename)
+  ) {
+    throw new Error(`Rejected unsafe filename: ${filename}`);
+  }
+}
+
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
+
+function assertImageExtension(filename: string): void {
+  if (!IMAGE_EXTENSIONS.has(path.extname(filename).toLowerCase())) {
+    throw new Error(`Rejected non-image filename: ${filename}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Settings persistence
+// ---------------------------------------------------------------------------
 
 interface AppSettings {
   recentFiles: string[];
@@ -29,6 +64,10 @@ function addRecentFile(filePath: string): void {
   saveSettings(settings);
 }
 
+// ---------------------------------------------------------------------------
+// Window
+// ---------------------------------------------------------------------------
+
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
@@ -43,9 +82,24 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
     show: false,
   });
+
+  // Block navigation away from the app
+  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault());
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' as const }));
+
+  // Block DevTools in production
+  if (!IS_DEV) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      const isDevToolsShortcut =
+        input.key === 'F12' ||
+        (input.control && input.shift && input.key.toLowerCase() === 'i');
+      if (isDevToolsShortcut) event.preventDefault();
+    });
+  }
 
   mainWindow.once('ready-to-show', () => mainWindow?.show());
 
@@ -56,6 +110,31 @@ function createWindow() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Security policies (CSP, permissions)
+// ---------------------------------------------------------------------------
+
+function setupSecurityPolicies() {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const csp = IS_DEV
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws:"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'";
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    });
+  });
+
+  session.defaultSession.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+}
+
+// ---------------------------------------------------------------------------
+// IPC handlers
+// ---------------------------------------------------------------------------
+
 ipcMain.handle('get-settings', () => loadSettings());
 
 ipcMain.handle('open-scenario', async () => {
@@ -65,22 +144,30 @@ ipcMain.handle('open-scenario', async () => {
   });
   if (result.canceled || !result.filePaths[0]) return null;
   const filePath = result.filePaths[0];
-  const content = fs.readFileSync(filePath, 'utf-8');
-  addRecentFile(filePath);
-  return { filePath, content: JSON.parse(content) };
+  try {
+    const content = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    addRecentFile(filePath);
+    return { filePath, content };
+  } catch {
+    return null;
+  }
 });
 
 ipcMain.handle('read-scenario', async (_event, filePath: string) => {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
+    assertJsonExtension(filePath);
+    const content = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     addRecentFile(filePath);
-    return { filePath, content: JSON.parse(content) };
+    return { filePath, content };
   } catch {
     return null;
   }
 });
 
 ipcMain.handle('save-scenario', async (_event, { filePath, data }: { filePath: string | null; data: unknown }) => {
+  const parsed = ScenarioSchema.safeParse(data);
+  if (!parsed.success) return null;
+
   let targetPath = filePath;
   if (!targetPath) {
     const result = await dialog.showSaveDialog(mainWindow!, {
@@ -89,7 +176,8 @@ ipcMain.handle('save-scenario', async (_event, { filePath, data }: { filePath: s
     if (result.canceled || !result.filePath) return null;
     targetPath = result.filePath;
   }
-  fs.writeFileSync(targetPath, JSON.stringify(data, null, 2), 'utf-8');
+  assertJsonExtension(targetPath);
+  fs.writeFileSync(targetPath, JSON.stringify(parsed.data, null, 2), 'utf-8');
   addRecentFile(targetPath);
   return targetPath;
 });
@@ -105,6 +193,8 @@ ipcMain.handle('export-markdown', async (_event, { markdown, defaultName }: { ma
 });
 
 ipcMain.handle('copy-screenshot', async (_event, { scenarioPath }: { scenarioPath: string }) => {
+  assertJsonExtension(scenarioPath);
+
   const result = await dialog.showOpenDialog(mainWindow!, {
     filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }],
     properties: ['openFile'],
@@ -128,13 +218,23 @@ ipcMain.handle('copy-screenshot', async (_event, { scenarioPath }: { scenarioPat
 });
 
 ipcMain.handle('read-screenshot', async (_event, { scenarioPath, filename }: { scenarioPath: string; filename: string }) => {
+  try {
+    assertJsonExtension(scenarioPath);
+    assertSafeFilename(filename);
+    assertImageExtension(filename);
+  } catch {
+    return null;
+  }
+
   const scenarioDir = path.dirname(scenarioPath);
   const scenarioName = path.basename(scenarioPath, '.json');
-  const filePath = path.join(scenarioDir, `${scenarioName}_files`, filename);
+  const resolvedPath = path.resolve(scenarioDir, `${scenarioName}_files`, filename);
+  const expectedDir = path.resolve(scenarioDir, `${scenarioName}_files`);
 
-  if (!fs.existsSync(filePath)) return null;
+  if (!resolvedPath.startsWith(expectedDir)) return null;
+  if (!fs.existsSync(resolvedPath)) return null;
 
-  const data = fs.readFileSync(filePath);
+  const data = fs.readFileSync(resolvedPath);
   const mimeMap: Record<string, string> = {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
     '.gif': 'image/gif', '.webp': 'image/webp', '.bmp': 'image/bmp',
@@ -143,5 +243,12 @@ ipcMain.handle('read-screenshot', async (_event, { scenarioPath, filename }: { s
   return `data:${mime};base64,${data.toString('base64')}`;
 });
 
-app.whenReady().then(createWindow);
+// ---------------------------------------------------------------------------
+// App lifecycle
+// ---------------------------------------------------------------------------
+
+app.whenReady().then(() => {
+  setupSecurityPolicies();
+  createWindow();
+});
 app.on('window-all-closed', () => app.quit());

@@ -1,7 +1,7 @@
 {
   "name": "qa-test-app",
   "productName": "QA Test Scenarios",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Aplikacja do zarządzania scenariuszami testowymi QA",
   "main": ".vite/build/main.js",
   "scripts": {
