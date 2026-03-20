@@ -1,50 +1,53 @@
 # QA Test Scenarios
 
-Desktopowa aplikacja do zarządzania scenariuszami testowymi QA — checklisty, notatki, screenshoty i eksport do Markdown (YouTrack).
+Desktopowa aplikacja do zarządzania scenariuszami testowymi. Twórz scenariusze, przeprowadzaj przebiegi testowe z checklistą, dodawaj notatki i screenshoty, a potem eksportuj raport do Markdown — gotowy do wklejenia w YouTrack.
+
+## Funkcje
+
+- **Scenariusze testowe** — definiuj sekcje i kroki testowe, oznaczaj widoczność (regression/full), importuj i eksportuj jako `.json`.
+- **Przebiegi testowe** — uruchamiaj wielokrotne przebiegi tego samego scenariusza. Każdy przebieg zachowuje niezależne statusy, notatki i screenshoty.
+- **Statusy kroków** — pass, fail, blocked, skipped, pending — szybki wybór z klawiatury lub dropdown.
+- **Notatki i screenshoty** — przypisuj notatki i zrzuty ekranu do konkretnych kroków testowych.
+- **Eksport Markdown** — generuj raport w formacie `.md` kompatybilnym z YouTrack, z tabelą wyników i statystykami.
+- **Szablony** — wbudowane szablony scenariuszy (Profil Agenta, Strefa Agenta, iBooster, CRM, Synchronizacja) do szybkiego startu.
+- **Tryb ciemny** — przełączanie między jasnym a ciemnym motywem.
+
+## Pobieranie
+
+Pobierz najnowszą wersję ze strony [Releases](https://github.com/HesusWhiskus/qa-test-scenarios/releases):
+
+| System  | Plik | Typ |
+|---------|------|-----|
+| Windows | `QA-Test-Scenarios-Setup.exe` | Instalator |
+| macOS   | `QA-Test-Scenarios.dmg` | Instalator |
+
+Dostępne są również przenośne wersje `.zip` dla obu platform.
 
 ## Instalacja
 
-Pobierz najnowszą wersję z [GitHub Releases](https://github.com/HesusWhiskus/qa-test-scenarios/releases):
-
-| System  | Plik |
-|---------|------|
-| Windows | `QA-Test-Scenarios-Setup.exe` |
-| macOS   | `QA-Test-Scenarios.dmg` |
-
 ### Windows
 
-1. Pobierz `QA-Test-Scenarios-Setup.exe`.
-2. Uruchom instalator. Przy pierwszym uruchomieniu Windows może wyświetlić ostrzeżenie "Nieznany wydawca" — kliknij **Więcej informacji** → **Uruchom mimo to**.
-3. Aplikacja zainstaluje się do `%LocalAppData%\QATestScenarios`.
+1. Pobierz `QA-Test-Scenarios-Setup.exe` ze strony Releases.
+2. Uruchom instalator. Windows może wyświetlić ostrzeżenie "Nieznany wydawca" — kliknij **Więcej informacji**, a następnie **Uruchom mimo to**.
+3. Aplikacja zainstaluje się automatycznie i będzie dostępna z menu Start.
 
 ### macOS
 
-1. Pobierz `QA-Test-Scenarios.dmg`.
-2. Otwórz plik DMG i przeciągnij aplikację do folderu Applications.
-3. Przy pierwszym uruchomieniu macOS może zablokować aplikację (Gatekeeper). Kliknij prawym przyciskiem → **Otwórz** → **Otwórz** w oknie dialogowym.
+1. Pobierz `QA-Test-Scenarios.dmg` ze strony Releases.
+2. Otwórz plik `.dmg` i przeciągnij ikonę aplikacji do folderu **Applications**.
+3. Przy pierwszym uruchomieniu macOS może zablokować aplikację. Kliknij prawym przyciskiem na ikonę aplikacji → **Otwórz** → potwierdź **Otwórz** w oknie dialogowym.
 
-## Rozwój
+## Skróty klawiszowe
 
-```bash
-# Instalacja zależności
-npm install
+| Skrót | Akcja |
+|-------|-------|
+| `P` | Oznacz krok jako pass |
+| `F` | Oznacz krok jako fail |
+| `B` | Oznacz krok jako blocked |
+| `S` | Oznacz krok jako skipped |
+| `↑` / `↓` | Nawigacja między krokami |
+| `N` | Focus na pole notatki |
 
-# Uruchomienie w trybie deweloperskim
-npm start
+## Stos technologiczny
 
-# Budowanie instalatora dla bieżącej platformy
-npm run make
-```
-
-## Wydawanie nowej wersji
-
-1. Zaktualizuj `version` w `package.json`.
-2. Scommituj zmiany.
-3. Utwórz tag i wypchnij go:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-GitHub Actions automatycznie zbuduje instalatory dla Windows i macOS i opublikuje je w [Releases](https://github.com/HesusWhiskus/qa-test-scenarios/releases).
+Electron · React · TypeScript · Tailwind CSS · Vite
