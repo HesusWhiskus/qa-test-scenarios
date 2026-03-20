@@ -16,6 +16,8 @@ const config: ForgeConfig = {
       name: 'QATestScenarios',
       setupExe: 'QA-Test-Scenarios-Setup.exe',
       noMsi: true,
+      authors: 'Polskie Polisy QA',
+      description: 'Aplikacja do zarządzania scenariuszami testowymi QA',
     }),
     new MakerDMG({
       name: 'QA-Test-Scenarios',
