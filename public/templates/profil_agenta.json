@@ -1,0 +1,480 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "QA Checklist – Profil Agenta",
+    "description": "Scenariusz testowy dla modułu Profil Agenta (zarządzanie użytkownikami, uprawnienia, integracje, separacja organizacji).",
+    "tags": [
+      "profil-agenta",
+      "regresja",
+      "integracja"
+    ],
+    "createdAt": "2026-03-20T00:00:00.000Z",
+    "updatedAt": "2026-03-20T10:11:40.985Z"
+  },
+  "sections": [
+    {
+      "id": "sec-regression",
+      "title": "Szybka regresja (~30 min)",
+      "level": 1,
+      "visibilityTags": [
+        "regression"
+      ],
+      "items": [
+        {
+          "id": "r1",
+          "title": "Logowanie działa",
+          "link": ""
+        },
+        {
+          "id": "r2",
+          "title": "Lista użytkowników się ładuje",
+          "link": ""
+        },
+        {
+          "id": "r3",
+          "title": "Wyszukiwanie użytkownika działa",
+          "link": ""
+        },
+        {
+          "id": "r4",
+          "title": "Edycja użytkownika (zmiana roli)",
+          "link": ""
+        },
+        {
+          "id": "r5",
+          "title": "Struktura partnerów się ładuje",
+          "link": ""
+        },
+        {
+          "id": "r6",
+          "title": "Uprawnienia użytkownika widoczne",
+          "link": ""
+        },
+        {
+          "id": "r7",
+          "title": "Integracje dostępne dla super user",
+          "link": ""
+        },
+        {
+          "id": "r8",
+          "title": "Uprawnienia TU zapisują się",
+          "link": ""
+        },
+        {
+          "id": "r9",
+          "title": "Zmiana uprawnień trafia do iBooster",
+          "link": ""
+        },
+        {
+          "id": "r10",
+          "title": "Flagi biznesowe działają",
+          "link": ""
+        },
+        {
+          "id": "r11",
+          "title": "Separacja organizacji działa",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-org-separation",
+      "title": "Test separacji organizacji",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "o1",
+          "title": "Utworzono organizację A",
+          "link": ""
+        },
+        {
+          "id": "o2",
+          "title": "Utworzono organizację B",
+          "link": ""
+        },
+        {
+          "id": "o3",
+          "title": "Utworzono użytkownika w organizacji A",
+          "link": ""
+        },
+        {
+          "id": "o4",
+          "title": "Utworzono użytkownika w organizacji B",
+          "link": ""
+        },
+        {
+          "id": "o5",
+          "title": "User z org A nie widzi userów z org B",
+          "link": ""
+        },
+        {
+          "id": "o6",
+          "title": "User z org A nie widzi partnerów z org B",
+          "link": ""
+        },
+        {
+          "id": "o7",
+          "title": "Wyszukiwarka nie znajduje userów z org B",
+          "link": ""
+        },
+        {
+          "id": "o8",
+          "title": "User z org A nie może edytować userów z org B",
+          "link": ""
+        },
+        {
+          "id": "o9",
+          "title": "User z org A nie widzi uprawnień userów z org B",
+          "link": ""
+        },
+        {
+          "id": "o10",
+          "title": "Dane użytkownika A trafiają tylko do iBooster org A",
+          "link": ""
+        },
+        {
+          "id": "o11",
+          "title": "Dane użytkownika B trafiają tylko do iBooster org B",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-login",
+      "title": "Logowanie (Keycloak)",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t1",
+          "title": "Poprawne logowanie",
+          "link": ""
+        },
+        {
+          "id": "t2",
+          "title": "Błędne hasło",
+          "link": ""
+        },
+        {
+          "id": "t3",
+          "title": "Logowanie nieistniejącym użytkownikiem",
+          "link": ""
+        },
+        {
+          "id": "t4",
+          "title": "Wylogowanie",
+          "link": ""
+        },
+        {
+          "id": "t5",
+          "title": "Wygaśnięcie sesji",
+          "link": ""
+        },
+        {
+          "id": "t6",
+          "title": "Widoczność kafelków zgodna z rolą",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-users",
+      "title": "Użytkownicy",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t7",
+          "title": "Lista użytkowników się ładuje",
+          "link": ""
+        },
+        {
+          "id": "t8",
+          "title": "Poprawne dane (imię nazwisko / rola / data)",
+          "link": ""
+        },
+        {
+          "id": "t9",
+          "title": "Wyszukiwanie po imieniu",
+          "link": ""
+        },
+        {
+          "id": "t10",
+          "title": "Wyszukiwanie po nazwisku",
+          "link": ""
+        },
+        {
+          "id": "t11",
+          "title": "Wyszukiwanie po email",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-edit-user",
+      "title": "Edycja użytkownika",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t12",
+          "title": "Zmiana imienia",
+          "link": ""
+        },
+        {
+          "id": "t13",
+          "title": "Zmiana nazwiska",
+          "link": ""
+        },
+        {
+          "id": "t14",
+          "title": "Zmiana roli",
+          "link": ""
+        },
+        {
+          "id": "t15",
+          "title": "Zapis bez zmian",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-delete",
+      "title": "Usuwanie",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t16",
+          "title": "Usunięcie użytkownika",
+          "link": ""
+        },
+        {
+          "id": "t17",
+          "title": "Usunięty użytkownik nie może się zalogować",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-partners",
+      "title": "Struktura partnerów",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t18",
+          "title": "Lista organizacji",
+          "link": ""
+        },
+        {
+          "id": "t19",
+          "title": "Wejście w organizację",
+          "link": ""
+        },
+        {
+          "id": "t20",
+          "title": "Właściciel widzi managerów",
+          "link": ""
+        },
+        {
+          "id": "t21",
+          "title": "Manager widzi swoich OFWCA",
+          "link": ""
+        },
+        {
+          "id": "t22",
+          "title": "OFWCA nie widzi innych użytkowników",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-org-sep-full",
+      "title": "Separacja organizacji (pełna)",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t23",
+          "title": "Użytkownik z org A nie widzi użytkowników z org B",
+          "link": ""
+        },
+        {
+          "id": "t24",
+          "title": "Użytkownik z org A nie widzi partnerów z org B",
+          "link": ""
+        },
+        {
+          "id": "t25",
+          "title": "Wyszukiwarka nie zwraca użytkowników z innych organizacji",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-permissions",
+      "title": "Uprawnienia",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t26",
+          "title": "Widok własnych uprawnień",
+          "link": ""
+        },
+        {
+          "id": "t27",
+          "title": "Administrator widzi uprawnienia użytkowników organizacji",
+          "link": ""
+        },
+        {
+          "id": "t28",
+          "title": "Właściciel widzi tylko podległych użytkowników",
+          "link": ""
+        },
+        {
+          "id": "t29",
+          "title": "OFWCA widzi tylko swoje uprawnienia",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-integrations",
+      "title": "Integracje",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t30",
+          "title": "Kafelek integracje widoczny tylko dla super user",
+          "link": ""
+        },
+        {
+          "id": "t31",
+          "title": "Lista TU się ładuje",
+          "link": ""
+        },
+        {
+          "id": "t32",
+          "title": "Zapis konfiguracji TU działa",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-tu-permissions",
+      "title": "Uprawnienia TU",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t33",
+          "title": "Organizacja ma dostęp do TU",
+          "link": ""
+        },
+        {
+          "id": "t34",
+          "title": "OFWCA ma dostęp tylko do przypisanych TU",
+          "link": ""
+        },
+        {
+          "id": "t35",
+          "title": "OFWCA nie widzi niedozwolonych TU",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-ibooster",
+      "title": "Integracja iBooster",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t36",
+          "title": "Zmiana uprawnień wysyła dane do iBooster",
+          "link": ""
+        },
+        {
+          "id": "t37",
+          "title": "Aktualizacja uprawnień działa",
+          "link": ""
+        },
+        {
+          "id": "t38",
+          "title": "Usunięcie uprawnień propaguje się do iBooster",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "id": "sec-flags",
+      "title": "Flagi biznesowe",
+      "level": 2,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "t39",
+          "title": "Flaga brak możliwości polisowania zapisana",
+          "link": ""
+        },
+        {
+          "id": "t40",
+          "title": "Flaga przekazana do iBooster",
+          "link": ""
+        },
+        {
+          "id": "t41",
+          "title": "Użytkownik nie może polisować w zablokowanym TU",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "id": "9787971e-eb55-46b0-a13b-6c1d2fea30b0",
+      "meta": {
+        "name": "Test 1",
+        "environment": "DEMO",
+        "buildVersion": "",
+        "tester": "Pablo",
+        "startedAt": "2026-03-20T10:10:57.589Z"
+      },
+      "results": {
+        "r1": {
+          "status": "pending",
+          "notes": "",
+          "screenshots": []
+        }
+      }
+    }
+  ]
+}
