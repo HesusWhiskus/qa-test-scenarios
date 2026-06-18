@@ -1,0 +1,343 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "TC1 — Nowy klient, pojazd i polisa w CRM",
+    "description": "Jako zalogowany użytkownik chcę aby dane nowego klienta oraz pojazdu, na które wystawiłam polisę, a także polisa, pojawiły się w CRM\n\nKroki rozpisane dla integracji z Berg CRM. W zależności od zintegrowanego systemu CRM kroki mogą się różnić, ale zasadnicze działanie (rezultat) na pozostać taki sam.\n\nŹródło: Przypadki testowe — integracja iBooster z CRM (Berg) v.1.1 AW.",
+    "tags": [
+      "integracja",
+      "ibooster",
+      "crm",
+      "berg"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-tc1",
+      "title": "Kroki testowe",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "tc1-step-001",
+          "title": "Jestem zalogowana do iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-002",
+          "title": "Znajduję się na stronie startowej iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-003",
+          "title": "Klient nie jest zapisany w systemie CRM",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-004",
+          "title": "Kliknę na ikonę sprzedaż",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-005",
+          "title": "Pojawi się zakres ubezpieczenia — Różnice środowisk - na niektórych konieczne będzie wybranie poszczególnych opcji, na innych zakres jest domyślny z możliwością zmiany",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-006",
+          "title": "Kliknę na przycisk „dalej”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-007",
+          "title": "Wyświetli się okno z preferowanymi towarzystwami ubezpieczeń, gdzie wszystkie dostępne towarzystwa są oznaczone jako wybrane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-008",
+          "title": "Kliknę „dalej”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-009",
+          "title": "Przejdę do strony formularza danych",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-010",
+          "title": "Kliknę na ikonę ołówka przy polu ubezpieczający/właściciel",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-011",
+          "title": "Otwarte zostaje okno z danymi ubezpieczającego",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-012",
+          "title": "Uzupełnię dane ubezpieczającego używając numeru PESEL który nie znajduje się w CRM ani iBooster oraz pozostałymi wymaganymi danymi",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-013",
+          "title": "Zatwierdzę zmiany klikając checkmark",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-014",
+          "title": "Okno z danymi ubezpieczającego zostaje zamknięte a jego dane zapisane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-015",
+          "title": "Kliknę w ikonę ołówka przy polu pojazd",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-016",
+          "title": "Otwarte zostaje okno z danymi pojazdu",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-017",
+          "title": "Uzupełnię dane pojazdu numerem rejestracyjnym oraz numerem VIN które nie znajdują się w systemie CRM ani iBooster oraz pozostałymi wymaganymi danymi",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-018",
+          "title": "Zatwierdzę zmiany klikając checkmark",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-019",
+          "title": "Okno z danymi pojazdu zostaje zamknięte a jego dane zapisane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-020",
+          "title": "Kliknę w ikonę ołówka przy polu dodatkowe dane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-021",
+          "title": "Otwarte zostaje okno z dodatkowymi danymi",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-022",
+          "title": "Uzupełnię dodatkowe dane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-023",
+          "title": "Zatwierdzę zmiany klikając checkmark",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-024",
+          "title": "Okno z dodatkowymi danymi zostaje zamknięte a dane zapisane",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-025",
+          "title": "W polu „data startu ochrony” wprowadzę datę dzisiejszą",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-026",
+          "title": "Kliknę „dalej”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-027",
+          "title": "Zostaję przeniesiona do strony z kalkulacjami",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-028",
+          "title": "Kliknę w ikonę dostrajania dowolnej oferty",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-029",
+          "title": "Otworzy się okno dostrajania oferty",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-030",
+          "title": "Kliknę na przycisk” dodaj ofertę do wybranych”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-031",
+          "title": "Oferta zostaje wybrana",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-032",
+          "title": "Kliknę przycisk „wybierz”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-033",
+          "title": "Zostaję przeniesiona do podsumowania oferty",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-034",
+          "title": "Widoczny jest checkbox do zaakceptowania wymaganych oświadczeń",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-035",
+          "title": "Zaakceptuję wymagane oświadczenia klikając w checkbox",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-036",
+          "title": "Przycisk „wystaw polisę” jest aktywny",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-037",
+          "title": "Kliknę w przycisk „wystaw polisę”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-038",
+          "title": "Pojawi się okno z pytaniem „czy chcesz wystawić polisę?”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-039",
+          "title": "Okno zawiera przyciski „tak” i „nie”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-040",
+          "title": "Kliknę na przycisk „tak”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-041",
+          "title": "Polisa zostanie wystawiona",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-042",
+          "title": "Przejdę do CRM",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-043",
+          "title": "W panelu po lewej stronie wybiorę „kontakty” a następnie „klient indywidualny”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-044",
+          "title": "Przejdę do listy klientów - osób fizycznych - zawierającą pola do filtrowania oraz wyszukiwania wyników",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-045",
+          "title": "W polu wyszukiwania wprowadzę numer PESEL klienta, dla którego wystawiłam polisę",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-046",
+          "title": "Na liście klientów pojawi się rekord z danymi klienta dla którego wystawiłam polisę",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-047",
+          "title": "Kliknę w imię i nazwisko wyszukanego klienta",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-048",
+          "title": "Przejdę do strony z danymi klienta",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-049",
+          "title": "Kliknę przycisk „Kopiuj do iBooster”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-050",
+          "title": "Otwarte zostaje okno z danymi klienta",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-051",
+          "title": "Kliknę „Przejdź do iBooster”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-052",
+          "title": "Zostanę przekierowana do formularza danych iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-053",
+          "title": "Pola „Dane ubezpieczającego” są uzupełnione — W zależności od ilości danych wprowadzonych do wystawienia pierwszej polisy oraz danych przechowywanych przez CRM, pola mogą być uzupełnione częściowo lub w pełni.",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-054",
+          "title": "Wrócę do CRM",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-055",
+          "title": "W lewym panelu kliknę w „sprzedaż” a następnie „sprzedaż - Tabela”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-056",
+          "title": "Przejdę do listy wystawionych polis zawierającą pola do filtrowania i wyszukiwania wyników",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-057",
+          "title": "W polu wyszukiwania wprowadzą numer wystawionej polisy i kliknę Enter/Return",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-058",
+          "title": "Na liście sprzedaży pojawi się wystawiona polisa",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-059",
+          "title": "Kliknę w numer polisy",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-060",
+          "title": "Przejdę do danych polisy",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-061",
+          "title": "Kliknę „Kopiuj do iBooster” lub „Wznów polisę”",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-062",
+          "title": "Zostanę przekierowana do formularza danych iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc1-step-063",
+          "title": "Pola formularza są uzupełnione danymi z CRM — W zależności od ilości danych wprowadzonych do wystawienia pierwszej polisy oraz danych przechowywanych przez CRM, pola mogą być uzupełnione częściowo lub w pełni.",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

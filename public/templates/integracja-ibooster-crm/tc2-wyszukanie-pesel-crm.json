@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "TC2 — Wyszukanie klienta i pojazdu po PESEL z CRM",
+    "description": "Jako zalogowany użytkownik chcę po rozpoczęciu nowej sprzedaży, po numerze PESEL wyszukać klienta oraz pojazd zapisane w CRM a następnie wybrać tego klienta i pojazd tak, by formularz został automatycznie uzupełniony danymi z CRM\n\nŹródło: Przypadki testowe — integracja iBooster z CRM (Berg) v.1.1 AW.",
+    "tags": [
+      "integracja",
+      "ibooster",
+      "crm",
+      "berg"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-tc2",
+      "title": "Kroki testowe",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "tc2-step-001",
+          "title": "Jestem zalogowana do iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-002",
+          "title": "Znajduję się na stronie startowej iBooster",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-003",
+          "title": "W systemie CRM istnieje klient o numerze PESEL: 56052826756, imieniu Jan, nazwisku Kowalski, z przypisanym adresem zamieszkania oraz istnieje pojazd o numerze rejestracyjnym WA 86714 — Przypadek wymaga uzupełnienia o dane testowe - dokładne dane adresu klienta, dane pojazdu, które będą przeniesione z CRM do iBooster.",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-004",
+          "title": "Klient jest zapisany w systemie CRM",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-005",
+          "title": "Kliknę na ikonę sprzedaż",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-006",
+          "title": "Pojawi się zakres ubezpieczenia",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-007",
+          "title": "Kliknę na przycisk „dalej”",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-008",
+          "title": "Wyświetli się okno z preferowanymi towarzystwami ubezpieczeń, gdzie wszystkie dostępne towarzystwa są oznaczone jako wybrane",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-009",
+          "title": "Kliknę „dalej”",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-010",
+          "title": "Przejdę do strony formularza danych",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-011",
+          "title": "Kliknę na ikonę ołówka przy polu ubezpieczający/właściciel",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-012",
+          "title": "Otwarte zostaje okno z danymi ubezpieczającego",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-013",
+          "title": "Uzupełnię pole „PESEL” danymi klienta: 56052826756",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-014",
+          "title": "Pojawia się lista z jednym rekordem odpowiadającym wprowadzonym danym",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-015",
+          "title": "Rekord zawiera również imię i nazwisko klienta przypisanego do numeru PESEL",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-016",
+          "title": "Klikam na wyszukany rekord",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-017",
+          "title": "Pola danych ubezpieczającego zostają automatycznie uzupełnione",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-018",
+          "title": "Pola widoczne są w kolejności: PESEL, imię, nazwisko, poprzednie nazwisko, numer telefonu, adres e-mail, kod pocztowy, poczta, miejscowość, ulica, numer domu, numer mieszkania, data uzyskania prawa jazdy, zawód, stan cywilny.",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-019",
+          "title": "Pola są wypełnione zgodnie z danymi wprowadzonymi dla klienta w CRM",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-020",
+          "title": "W prawym dolnym rogu pojawia się komunikat: „Sukces! Dane klienta zostały skopiowane”",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-021",
+          "title": "Klikam checkmark",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-022",
+          "title": "Okno danych ubezpieczającego zostaje zamknięte",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-023",
+          "title": "Kliknę na ikonę ołówka przy polu pojazd",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-024",
+          "title": "Otwarte zostaje okno z danymi pojazdu",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-025",
+          "title": "Wprowadzę numer rejestracyjny pojazdu: WA 86714",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-026",
+          "title": "Pojawia się lista z jednym rekordem odpowiadającym wprowadzonym danym",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-027",
+          "title": "Rekord zawiera również markę pojazdu, numer VIN oraz źródło danych [CRM]",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-028",
+          "title": "Klikam na wyszukany rekord",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-029",
+          "title": "Pola danych pojazdu zostają automatycznie uzupełnione",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-030",
+          "title": "Pola: nr Vin, nr rejestracyjny, data pierwszej rejestracji, rok nabycia pojazdu, wypełnione są danymi wprowadzonymi dla tego pojazdu w CRM",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-031",
+          "title": "Pola „dane pojazdu wg Eurotax” i „dane pojazdu wg Infoekspert” wypełnione są dla obu słowników przynajmniej w zakresie marki, roku produkcji, rodzaju paliwa, pojemności silnika, pod warunkiem że dane te są wprowadzone w CRM dla wybranego pojazdu.",
+          "link": ""
+        },
+        {
+          "id": "tc2-step-032",
+          "title": "W prawym dolnym rogu pojawia się komunikat: „Sukces! Dane pojazdu zostały skopiowane”",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

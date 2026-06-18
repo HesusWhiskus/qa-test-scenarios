@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 3. Formularz",
+    "description": "Scenariusze testowe formularza danych w iBooster.",
+    "tags": [
+      "ibooster",
+      "formularz"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-3-formularz",
+      "title": "3. Formularz",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

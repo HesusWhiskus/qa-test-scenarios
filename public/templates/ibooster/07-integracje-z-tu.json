@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 7. Integracje z TU",
+    "description": "Scenariusze testowe integracji z Towarzystwami Ubezpieczeniowymi.",
+    "tags": [
+      "ibooster",
+      "integracje",
+      "tu"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-7-integracje-z-tu",
+      "title": "7. Integracje z TU",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Direct",
+    "description": "Scenariusze testowe modułu Direct.",
+    "tags": [
+      "direct"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-direct",
+      "title": "Direct",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

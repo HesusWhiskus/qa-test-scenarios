@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 6. Schowek",
+    "description": "Scenariusze testowe modułu Schowek.",
+    "tags": [
+      "ibooster",
+      "schowek"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-6-schowek",
+      "title": "6. Schowek",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

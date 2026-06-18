@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 1. RODO - IDD",
+    "description": "Scenariusze testowe procesu RODO i IDD w iBooster.",
+    "tags": [
+      "ibooster",
+      "rodo",
+      "idd"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-1-rodo-idd",
+      "title": "1. RODO - IDD",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

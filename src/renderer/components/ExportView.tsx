@@ -32,7 +32,7 @@ export function ExportView() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Eksport Markdown</h2>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Raport Markdown</h2>
         <div className="flex gap-2">
           <button
             onClick={handleCopy}

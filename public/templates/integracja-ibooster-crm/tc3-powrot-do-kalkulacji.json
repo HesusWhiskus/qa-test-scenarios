@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "TC3 — Powrót z CRM do kalkulacji",
+    "description": "Jako zalogowany użytkownik chcę wrócić z CRM do procesu obsługi klienta\n\nŹródło: Przypadki testowe — integracja iBooster z CRM (Berg) v.1.1 AW.",
+    "tags": [
+      "integracja",
+      "ibooster",
+      "crm",
+      "berg"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-tc3",
+      "title": "Kroki testowe",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "tc3-step-001",
+          "title": "W systemie CRM istnieje zapisana oferta (szansa sprzedaży)",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-002",
+          "title": "Znajduję się na stronie startowej CRM",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-003",
+          "title": "Kliknę w „szanse sprzedaży” a następnie „szanse sprzedaży - Tabela” w panelu po lewej stronie",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-004",
+          "title": "Wyświetlona zostaje tabela z rozpoczętymi a niezakończonymi procesami sprzedaży",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-005",
+          "title": "Wprowadzę w polu wyszukiwania numer PESEL klienta dla którego zapisana została oferta",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-006",
+          "title": "Wcisnę Enter/Return",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-007",
+          "title": "Na liście rekordów pojawi się wynik z wyszukiwanym klientem",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-008",
+          "title": "Kliknę w dane - imię i nazwisko klienta",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-009",
+          "title": "Wyświetlone zostaną informacje o kliencie, przedmiocie ubezpieczenia oraz etapie sprzedaży, a także wysokość składki wybranej oferty oraz przycisk „wróć do kalkulacji”.",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-010",
+          "title": "Kliknę „wróć do kalkulacji”",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-011",
+          "title": "W nowej karcie otworzy się iBooster na etapie kalkulacji wybranego klienta z zapisaną ofertą.",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-012",
+          "title": "Kliknę przycisk „Wybierz” obok zapisanej oferty",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-013",
+          "title": "Przejdę na podsumowanie oferty przed plisowaniem",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-014",
+          "title": "Wrócę do karty w której otwarty jest CRM",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-015",
+          "title": "Odświeżę sesję przeglądarki",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-016",
+          "title": "Kliknę ponownie przycisk „Wróć do kalkulacji”",
+          "link": ""
+        },
+        {
+          "id": "tc3-step-017",
+          "title": "W nowej karcie otworzy się iBooster na etapie podsumowania oferty przed plisowaniem",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

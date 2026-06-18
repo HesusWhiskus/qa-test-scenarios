@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Profil Agenta",
+    "description": "Scenariusze testowe modułu Profil Agenta (kategoria firmowa).",
+    "tags": [
+      "profil-agenta"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-profil-agenta",
+      "title": "Profil Agenta",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

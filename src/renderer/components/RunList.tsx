@@ -5,13 +5,20 @@ import { ProgressBar } from './shared/ProgressBar';
 import { Plus, Play, FileDown, Trash2, CheckCircle, FileText } from 'lucide-react';
 
 export function RunList() {
-  const { scenario, filePath, navigate, createNewRun, deleteRun, completeRun } = useScenario();
+  const { scenario, filePath, navigate, createNewRun, deleteRun, completeRun, ensureScenarioSaved, showFlash } = useScenario();
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: '', environment: '', buildVersion: '', tester: '' });
 
   if (!scenario) return null;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    if (!filePath) {
+      const saved = await ensureScenarioSaved();
+      if (!saved) {
+        showFlash('Nie udało się zapisać scenariusza. Spróbuj ponownie.');
+        return;
+      }
+    }
     createNewRun(form);
     setShowNew(false);
     setForm({ name: '', environment: '', buildVersion: '', tester: '' });
@@ -43,14 +50,14 @@ export function RunList() {
             onClick={() => setShowNew(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex-shrink-0 font-medium shadow-xs transition-colors"
           >
-            <Plus size={15} /> Nowy przebieg
+            <Plus size={15} /> Nowa sesja
           </button>
         </div>
       </div>
 
       {showNew && (
         <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800">
-          <h3 className="font-semibold text-sm mb-3 text-slate-800 dark:text-slate-200">Nowy przebieg</h3>
+          <h3 className="font-semibold text-sm mb-3 text-slate-800 dark:text-slate-200">Nowa sesja testowa</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
             {[
               { key: 'name', label: 'Nazwa (opcjonalnie)', placeholder: 'np. Regresja sprint 42' },
@@ -70,7 +77,7 @@ export function RunList() {
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">Rozpocznij przebieg</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">Rozpocznij sesję</button>
             <button onClick={() => setShowNew(false)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-sm transition-colors">Anuluj</button>
           </div>
         </div>
@@ -79,7 +86,7 @@ export function RunList() {
       {runs.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
           <Play size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Brak przebiegów. Utwórz pierwszy przebieg, aby rozpocząć testowanie.</p>
+          <p className="text-sm">Brak sesji testowych. Utwórz pierwszą sesję, aby rozpocząć testowanie.</p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -91,7 +98,7 @@ export function RunList() {
                 <div className="flex items-start justify-between mb-2.5">
                   <div>
                     <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-200">
-                      {run.meta.name || `Przebieg ${new Date(run.meta.startedAt).toLocaleString('pl-PL')}`}
+                      {run.meta.name || `Sesja ${new Date(run.meta.startedAt).toLocaleString('pl-PL')}`}
                     </h3>
                     <div className="text-[11px] text-slate-400 flex gap-3 mt-0.5">
                       {run.meta.environment && <span>Env: {run.meta.environment}</span>}

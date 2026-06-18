@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu, session, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, session, screen, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ScenarioSchema } from '../renderer/types/schema';
@@ -12,6 +12,7 @@ const IS_DEV = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 app.setAppLogsPath();
 const USER_DATA_DIR = app.getPath('userData');
 const SETTINGS_PATH = path.join(USER_DATA_DIR, 'settings.json');
+const SCENARIOS_DIR = path.join(USER_DATA_DIR, 'scenarios');
 
 // ---------------------------------------------------------------------------
 // Path validation — prevents path traversal attacks from renderer
@@ -88,6 +89,193 @@ function addRecentFile(filePath: string): void {
   const settings = loadSettings();
   settings.recentFiles = [filePath, ...settings.recentFiles.filter(f => f !== filePath)].slice(0, 10);
   saveSettings(settings);
+}
+
+function slugifyTitle(title: string): string {
+  const slug = title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .toLowerCase();
+  return slug || 'scenariusz';
+}
+
+function getAutoSavePath(title: string): string {
+  if (!fs.existsSync(SCENARIOS_DIR)) {
+    fs.mkdirSync(SCENARIOS_DIR, { recursive: true });
+  }
+  const base = slugifyTitle(title);
+  let candidate = path.join(SCENARIOS_DIR, `${base}.json`);
+  if (!fs.existsSync(candidate)) return candidate;
+  let i = 2;
+  while (fs.existsSync(path.join(SCENARIOS_DIR, `${base}-${i}.json`))) i++;
+  return path.join(SCENARIOS_DIR, `${base}-${i}.json`);
+}
+
+// ---------------------------------------------------------------------------
+// Scenario file I/O
+// ---------------------------------------------------------------------------
+
+type ReadScenarioError = { error: 'read_failed' | 'invalid_schema' };
+
+function readScenarioFile(filePath: string): { filePath: string; content: unknown } | ReadScenarioError {
+  try {
+    assertJsonExtension(filePath);
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    const validated = ScenarioSchema.safeParse(parsed);
+    if (!validated.success) return { error: 'invalid_schema' };
+    return { filePath, content: validated.data };
+  } catch {
+    return { error: 'read_failed' };
+  }
+}
+
+function getTemplatesDir(): string {
+  if (IS_DEV) {
+    return path.join(app.getAppPath(), 'public', 'templates');
+  }
+  return path.join(process.resourcesPath, 'templates');
+}
+
+function listJsonFiles(dir: string, baseDir: string = dir): string[] {
+  const results: string[] = [];
+  if (!fs.existsSync(dir)) return results;
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listJsonFiles(fullPath, baseDir));
+    } else if (entry.isFile() && path.extname(entry.name).toLowerCase() === '.json') {
+      results.push(path.relative(baseDir, fullPath).replace(/\\/g, '/'));
+    }
+  }
+  return results.sort();
+}
+
+function assertSafeRelativePath(relativePath: string): void {
+  if (
+    relativePath.includes('..') ||
+    path.isAbsolute(relativePath) ||
+    relativePath.startsWith('/')
+  ) {
+    throw new Error(`Rejected unsafe relative path: ${relativePath}`);
+  }
+}
+
+interface SavedRunSummary {
+  id: string;
+  name: string;
+  startedAt: string;
+  completedAt?: string;
+  progress: { done: number; total: number };
+}
+
+interface SavedScenarioSummary {
+  filePath: string;
+  title: string;
+  updatedAt: string;
+  runCount: number;
+  activeRunCount: number;
+  lastRun: SavedRunSummary | null;
+}
+
+function countRunProgress(
+  run: { results: Record<string, { status: string }> },
+  totalItems: number,
+): { done: number; total: number } {
+  let done = 0;
+  for (const result of Object.values(run.results)) {
+    if (result.status !== 'pending') done++;
+  }
+  return { done, total: totalItems };
+}
+
+function buildScenarioSummary(filePath: string): SavedScenarioSummary | null {
+  const readResult = readScenarioFile(filePath);
+  if ('error' in readResult) return null;
+
+  const scenario = readResult.content as {
+    meta: { title: string; updatedAt: string };
+    sections: { items: unknown[] }[];
+    runs: {
+      id: string;
+      meta: { name: string; startedAt: string; completedAt?: string };
+      results: Record<string, { status: string }>;
+    }[];
+  };
+
+  const totalItems = scenario.sections.reduce((n, s) => n + s.items.length, 0);
+  const runs = scenario.runs || [];
+  const activeRunCount = runs.filter(r => !r.meta.completedAt).length;
+
+  const lastRun = runs.length === 0
+    ? null
+    : [...runs].sort((a, b) => b.meta.startedAt.localeCompare(a.meta.startedAt))[0];
+
+  let lastRunSummary: SavedRunSummary | null = null;
+  if (lastRun) {
+    const progress = countRunProgress(lastRun, totalItems);
+    lastRunSummary = {
+      id: lastRun.id,
+      name: lastRun.meta.name,
+      startedAt: lastRun.meta.startedAt,
+      completedAt: lastRun.meta.completedAt,
+      progress,
+    };
+  }
+
+  let updatedAt = scenario.meta.updatedAt;
+  try {
+    const stat = fs.statSync(filePath);
+    if (stat.mtime.toISOString() > updatedAt) updatedAt = stat.mtime.toISOString();
+  } catch { /* ignore */ }
+
+  return {
+    filePath,
+    title: scenario.meta.title,
+    updatedAt,
+    runCount: runs.length,
+    activeRunCount,
+    lastRun: lastRunSummary,
+  };
+}
+
+function listScenarioPaths(): string[] {
+  const paths = new Set<string>();
+  const settings = loadSettings();
+
+  if (fs.existsSync(SCENARIOS_DIR)) {
+    for (const entry of fs.readdirSync(SCENARIOS_DIR, { withFileTypes: true })) {
+      if (entry.isFile() && path.extname(entry.name).toLowerCase() === '.json') {
+        paths.add(path.join(SCENARIOS_DIR, entry.name));
+      }
+    }
+  }
+
+  for (const filePath of settings.recentFiles) {
+    if (fs.existsSync(filePath) && path.extname(filePath).toLowerCase() === '.json') {
+      paths.add(filePath);
+    }
+  }
+
+  return [...paths];
+}
+
+function listSavedScenarios(): SavedScenarioSummary[] {
+  const summaries: SavedScenarioSummary[] = [];
+  for (const filePath of listScenarioPaths()) {
+    const summary = buildScenarioSummary(filePath);
+    if (summary) summaries.push(summary);
+  }
+
+  return summaries.sort((a, b) => {
+    if (a.activeRunCount > 0 && b.activeRunCount === 0) return -1;
+    if (b.activeRunCount > 0 && a.activeRunCount === 0) return 1;
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -184,6 +372,20 @@ function setupSecurityPolicies() {
 
 ipcMain.handle('get-settings', () => loadSettings());
 
+ipcMain.handle('get-app-info', () => ({
+  version: app.getVersion(),
+  scenariosDir: SCENARIOS_DIR,
+}));
+
+ipcMain.handle('list-saved-scenarios', () => listSavedScenarios());
+
+ipcMain.handle('open-scenarios-dir', () => {
+  if (!fs.existsSync(SCENARIOS_DIR)) {
+    fs.mkdirSync(SCENARIOS_DIR, { recursive: true });
+  }
+  shell.openPath(SCENARIOS_DIR);
+});
+
 ipcMain.handle('open-scenario', async () => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     filters: [{ name: 'QA Scenario', extensions: ['json'] }],
@@ -191,37 +393,55 @@ ipcMain.handle('open-scenario', async () => {
   });
   if (result.canceled || !result.filePaths[0]) return null;
   const filePath = result.filePaths[0];
-  try {
-    const content = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    addRecentFile(filePath);
-    return { filePath, content };
-  } catch {
-    return null;
-  }
+  const readResult = readScenarioFile(filePath);
+  if ('error' in readResult) return readResult;
+  addRecentFile(filePath);
+  return readResult;
 });
 
 ipcMain.handle('read-scenario', async (_event, filePath: string) => {
+  const readResult = readScenarioFile(filePath);
+  if ('error' in readResult) return readResult;
+  addRecentFile(filePath);
+  return readResult;
+});
+
+ipcMain.handle('list-templates', () => {
+  const templatesDir = getTemplatesDir();
+  return listJsonFiles(templatesDir);
+});
+
+ipcMain.handle('read-template', (_event, relativePath: string) => {
   try {
-    assertJsonExtension(filePath);
-    const content = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    addRecentFile(filePath);
-    return { filePath, content };
+    assertSafeRelativePath(relativePath);
+    assertJsonExtension(relativePath);
+    const fullPath = path.join(getTemplatesDir(), relativePath);
+    const readResult = readScenarioFile(fullPath);
+    if ('error' in readResult) return readResult;
+    return readResult.content;
   } catch {
-    return null;
+    return { error: 'read_failed' as const };
   }
 });
 
-ipcMain.handle('save-scenario', async (_event, { filePath, data }: { filePath: string | null; data: unknown }) => {
+ipcMain.handle('save-scenario', async (
+  _event,
+  { filePath, data, autoSave }: { filePath: string | null; data: unknown; autoSave?: boolean },
+) => {
   const parsed = ScenarioSchema.safeParse(data);
   if (!parsed.success) return null;
 
   let targetPath = filePath;
   if (!targetPath) {
-    const result = await dialog.showSaveDialog(mainWindow!, {
-      filters: [{ name: 'QA Scenario', extensions: ['json'] }],
-    });
-    if (result.canceled || !result.filePath) return null;
-    targetPath = result.filePath;
+    if (autoSave) {
+      targetPath = getAutoSavePath(parsed.data.meta.title);
+    } else {
+      const result = await dialog.showSaveDialog(mainWindow!, {
+        filters: [{ name: 'QA Scenario', extensions: ['json'] }],
+      });
+      if (result.canceled || !result.filePath) return null;
+      targetPath = result.filePath;
+    }
   }
   assertJsonExtension(targetPath);
   fs.writeFileSync(targetPath, JSON.stringify(parsed.data, null, 2), 'utf-8');

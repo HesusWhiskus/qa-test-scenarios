@@ -55,7 +55,7 @@ export function generateMarkdown(scenario: Scenario, run: Run): string {
       if (result?.screenshots?.length) {
         for (const ss of result.screenshots) {
           const caption = ss.caption || ss.filename;
-          lines.push(`  > ![${caption}](${ss.filename})`);
+          lines.push(`  > ![${caption}](${ss.relativePath || ss.filename})`);
         }
       }
       if (item.link) {

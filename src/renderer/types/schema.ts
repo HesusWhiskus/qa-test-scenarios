@@ -6,6 +6,7 @@ export type Status = z.infer<typeof StatusEnum>;
 
 export const ScreenshotSchema = z.object({
   filename: z.string(),
+  relativePath: z.string().optional(),
   caption: z.string().default(''),
 });
 export type Screenshot = z.infer<typeof ScreenshotSchema>;

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 5. Polisowanie",
+    "description": "Scenariusze testowe procesu polisowania.",
+    "tags": [
+      "ibooster",
+      "polisowanie"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-5-polisowanie",
+      "title": "5. Polisowanie",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

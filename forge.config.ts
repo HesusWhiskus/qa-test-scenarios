@@ -7,6 +7,7 @@ import { MakerDMG } from '@electron-forge/maker-dmg';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    extraResource: ['./public/templates'],
     name: 'QA Test Scenarios',
     appBundleId: 'com.polskiepolisy.qa-test-scenarios',
     appCopyright: `Copyright © ${new Date().getFullYear()}`,

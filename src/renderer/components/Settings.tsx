@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useTheme, type FontSize, type Density } from '../hooks/useTheme';
-import { Moon, Sun, Type, Rows3 } from 'lucide-react';
+import { useScenario } from '../hooks/useScenario';
+import { Moon, Sun, Type, Rows3, Info, ScrollText } from 'lucide-react';
+import * as ipc from '../lib/ipc';
 
 const fontSizeOptions: { value: FontSize; label: string; desc: string }[] = [
   { value: 'small', label: 'Mały', desc: '13px' },
@@ -14,12 +17,34 @@ const densityOptions: { value: Density; label: string; desc: string }[] = [
 
 export function Settings() {
   const { dark, toggle, fontSize, setFontSize, density, setDensity } = useTheme();
+  const { navigate } = useScenario();
+  const [version, setVersion] = useState('…');
+
+  useEffect(() => {
+    ipc.getAppInfo().then(info => setVersion(info.version));
+  }, []);
 
   return (
     <div className="max-w-xl mx-auto px-6 py-8">
       <h1 className="text-xl font-bold mb-6 text-slate-900 dark:text-slate-100">Ustawienia</h1>
 
       <div className="space-y-6">
+        <Section title="O aplikacji" icon={<Info size={16} />}>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+            <strong className="text-slate-800 dark:text-slate-200">QA Test Scenarios</strong> v{version}
+          </p>
+          <p className="text-xs text-slate-400 mb-3">
+            Aplikacja desktopowa do scenariuszy testowych QA (Windows i macOS).
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('changelog')}
+            className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            <ScrollText size={15} /> Historia zmian
+          </button>
+        </Section>
+
         <Section title="Motyw" icon={<Sun size={16} />}>
           <div className="flex gap-2">
             <OptionButton

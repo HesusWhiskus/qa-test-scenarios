@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 4. Kalkulacja",
+    "description": "Scenariusze testowe kalkulacji ofert.",
+    "tags": [
+      "ibooster",
+      "kalkulacja"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-4-kalkulacja",
+      "title": "4. Kalkulacja",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

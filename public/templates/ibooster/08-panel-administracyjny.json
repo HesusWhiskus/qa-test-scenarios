@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "iBooster — 8. Panel Administracyjny",
+    "description": "Scenariusze testowe Panelu Administracyjnego iBooster.",
+    "tags": [
+      "ibooster",
+      "panel-admin"
+    ],
+    "createdAt": "2026-06-18T12:40:24.455Z",
+    "updatedAt": "2026-06-18T12:40:24.455Z"
+  },
+  "sections": [
+    {
+      "id": "sec-ibooster-8-panel-administracyjny",
+      "title": "8. Panel Administracyjny",
+      "level": 1,
+      "visibilityTags": [
+        "full"
+      ],
+      "items": [
+        {
+          "id": "placeholder",
+          "title": "Scenariusze do uzupełnienia",
+          "link": ""
+        }
+      ]
+    }
+  ],
+  "runs": []
+}

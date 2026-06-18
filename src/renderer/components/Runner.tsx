@@ -15,7 +15,7 @@ export function Runner() {
   const {
     scenario, currentRunId,
     setItemStatus, updateResult, addScreenshot,
-    resetSection, bulkSetSection, getCurrentRun,
+    resetSection, bulkSetSection, getCurrentRun, selectRun, navigate,
   } = useScenario();
 
   const [filter, setFilter] = useState<FilterMode>('all');
@@ -129,25 +129,49 @@ export function Runner() {
   };
 
   if (!scenario || !run) {
-    return <div className="p-8 text-center text-slate-400">Nie wybrano przebiegu. Przejdź do zakładki Przebiegi.</div>;
+    return <div className="p-8 text-center text-slate-400">Nie wybrano sesji. Przejdź do zakładki Sesje testowe.</div>;
   }
 
   const stats = getRunStats(run, scenario);
+  const runs = [...scenario.runs].reverse();
+
+  const formatRunLabel = (r: typeof run) =>
+    r.meta.name || `Sesja ${new Date(r.meta.startedAt).toLocaleString('pl-PL')}`;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{scenario.meta.title}</h2>
-          {run.meta.name && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{run.meta.name}</p>}
+        <div className="flex items-center justify-between mb-5 gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">{scenario.meta.title}</h2>
+          {runs.length > 1 ? (
+            <select
+              value={currentRunId || ''}
+              onChange={e => selectRun(e.target.value)}
+              className="mt-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 max-w-full"
+            >
+              {runs.map(r => (
+                <option key={r.id} value={r.id}>{formatRunLabel(r)}{r.meta.completedAt ? ' (zakończona)' : ''}</option>
+              ))}
+            </select>
+          ) : (
+            run.meta.name && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{run.meta.name}</p>
+          )}
         </div>
-        <button
-          onClick={() => setShowShortcuts(s => !s)}
-          className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title="Skróty klawiszowe"
-        >
-          <Keyboard size={18} />
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => navigate('runs')}
+            className="text-[12px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Sesje
+          </button>
+          <button
+            onClick={() => setShowShortcuts(s => !s)}
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Skróty klawiszowe"
+          >
+            <Keyboard size={18} />
+          </button>
+        </div>
       </div>
 
       {showShortcuts && (

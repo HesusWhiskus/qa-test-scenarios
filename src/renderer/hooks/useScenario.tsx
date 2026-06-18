@@ -3,7 +3,8 @@ import type { Scenario, Section, Item, Run, RunMeta, ItemResult, Status } from '
 import { createScenario, createSection, createItem, createRun } from '../types/schema';
 import * as ipc from '../lib/ipc';
 
-export type View = 'home' | 'editor' | 'runs' | 'runner' | 'export' | 'help' | 'settings';
+export type AppMode = 'hub' | 'testing' | 'library';
+export type View = 'hub' | 'picker' | 'catalog' | 'editor' | 'runs' | 'runner' | 'export' | 'help' | 'settings' | 'changelog';
 
 interface PendingOpen {
   scenario: Scenario;
@@ -11,6 +12,7 @@ interface PendingOpen {
 }
 
 interface ScenarioState {
+  appMode: AppMode;
   scenario: Scenario | null;
   filePath: string | null;
   currentView: View;
@@ -18,18 +20,29 @@ interface ScenarioState {
   isDirty: boolean;
   recentFiles: string[];
   pendingOpen: PendingOpen | null;
+  flashMessage: string | null;
+  completedRunId: string | null;
 }
 
 interface ScenarioContextType extends ScenarioState {
   navigate: (view: View, runId?: string | null) => void;
+  enterTestingMode: () => void;
+  enterLibraryMode: () => void;
+  returnToHub: () => void;
+  switchToLibraryForEdit: () => void;
+  dismissCompletedBanner: () => void;
   newScenario: (title: string) => void;
-  loadFromTemplate: (scenario: Scenario) => void;
+  loadFromTemplate: (scenario: Scenario) => Promise<void>;
   openScenario: () => Promise<void>;
-  openRecentFile: (path: string) => Promise<void>;
+  openRecentFile: (path: string, preferMode?: AppMode) => Promise<void>;
+  openSavedScenario: (filePath: string) => Promise<void>;
   confirmOpen: (view: View) => void;
+  confirmOpenNewRun: () => void;
   cancelOpen: () => void;
+  showFlash: (message: string) => void;
   saveScenario: () => Promise<void>;
-  saveAsScenario: () => Promise<void>;
+  saveAsScenario: () => Promise<string | null>;
+  ensureScenarioSaved: () => Promise<string | null>;
   duplicateScenario: () => Promise<void>;
   updateMeta: (meta: Partial<Scenario['meta']>) => void;
   addSection: (title: string, level?: 1 | 2) => void;
@@ -43,6 +56,7 @@ interface ScenarioContextType extends ScenarioState {
   createNewRun: (meta: Partial<RunMeta>) => string;
   completeRun: (runId: string) => void;
   deleteRun: (runId: string) => void;
+  selectRun: (runId: string) => void;
   updateResult: (runId: string, itemId: string, updates: Partial<ItemResult>) => void;
   setItemStatus: (runId: string, itemId: string, status: Status) => void;
   addScreenshot: (runId: string, itemId: string) => Promise<void>;
@@ -53,20 +67,41 @@ interface ScenarioContextType extends ScenarioState {
 
 const ScenarioContext = createContext<ScenarioContextType | null>(null);
 
+function cloneFreshScenario(scenario: Scenario): Scenario {
+  const now = new Date().toISOString();
+  return {
+    ...JSON.parse(JSON.stringify(scenario)),
+    meta: { ...scenario.meta, createdAt: now, updatedAt: now },
+    runs: [],
+  };
+}
+
 export function ScenarioProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ScenarioState>({
+    appMode: 'hub',
     scenario: null,
     filePath: null,
-    currentView: 'home',
+    currentView: 'hub',
     currentRunId: null,
     isDirty: false,
     recentFiles: [],
     pendingOpen: null,
+    flashMessage: null,
+    completedRunId: null,
   });
 
   const stateRef = useRef(state);
   stateRef.current = state;
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const showFlash = useCallback((message: string) => {
+    clearTimeout(flashTimer.current);
+    setState(s => ({ ...s, flashMessage: message }));
+    flashTimer.current = setTimeout(() => {
+      setState(s => ({ ...s, flashMessage: null }));
+    }, 5000);
+  }, []);
 
   useEffect(() => {
     ipc.getRecentFiles().then(files => {
@@ -80,8 +115,10 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       autoSaveTimer.current = setTimeout(() => {
         const s = stateRef.current;
         if (s.filePath && s.scenario) {
-          ipc.saveScenario(s.filePath, s.scenario).then(() => {
-            setState(prev => ({ ...prev, isDirty: false }));
+          ipc.saveScenario(s.filePath, s.scenario).then(savedPath => {
+            if (savedPath) {
+              setState(prev => ({ ...prev, isDirty: false }));
+            }
           });
         }
       }, 2000);
@@ -102,6 +139,62 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, currentView: view, currentRunId: runId !== undefined ? runId : s.currentRunId }));
   }, []);
 
+  const enterTestingMode = useCallback(() => {
+    setState(s => ({
+      ...s,
+      appMode: 'testing',
+      currentView: 'picker',
+      scenario: null,
+      filePath: null,
+      currentRunId: null,
+      isDirty: false,
+      pendingOpen: null,
+      completedRunId: null,
+    }));
+  }, []);
+
+  const enterLibraryMode = useCallback(() => {
+    setState(s => ({
+      ...s,
+      appMode: 'library',
+      currentView: 'catalog',
+      scenario: null,
+      filePath: null,
+      currentRunId: null,
+      isDirty: false,
+      pendingOpen: null,
+      completedRunId: null,
+    }));
+  }, []);
+
+  const returnToHub = useCallback(() => {
+    setState(s => ({
+      ...s,
+      appMode: 'hub',
+      currentView: 'hub',
+      scenario: null,
+      filePath: null,
+      currentRunId: null,
+      isDirty: false,
+      pendingOpen: null,
+      completedRunId: null,
+    }));
+  }, []);
+
+  const switchToLibraryForEdit = useCallback(() => {
+    setState(s => ({
+      ...s,
+      appMode: 'library',
+      currentView: 'editor',
+      currentRunId: null,
+      completedRunId: null,
+    }));
+  }, []);
+
+  const dismissCompletedBanner = useCallback(() => {
+    setState(s => ({ ...s, completedRunId: null }));
+  }, []);
+
   const newScenario = useCallback((title: string) => {
     setState(s => ({
       ...s,
@@ -114,37 +207,52 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const loadFromTemplate = useCallback((scenario: Scenario) => {
-    const now = new Date().toISOString();
-    const fresh: Scenario = {
-      ...JSON.parse(JSON.stringify(scenario)),
-      meta: { ...scenario.meta, createdAt: now, updatedAt: now },
-      runs: [],
-    };
+  const loadFromTemplate = useCallback(async (scenario: Scenario) => {
+    const fresh = cloneFreshScenario(scenario);
+    const mode = stateRef.current.appMode;
+    if (mode === 'library') {
+      setState(s => ({
+        ...s,
+        scenario: fresh,
+        filePath: null,
+        currentView: 'editor',
+        currentRunId: null,
+        isDirty: false,
+        pendingOpen: null,
+      }));
+      return;
+    }
+
+    const savedPath = await ipc.saveScenario(null, fresh, { autoSave: true });
+    if (!savedPath) {
+      showFlash('Nie udało się zapisać scenariusza na dysku.');
+    }
+    const recentFiles = savedPath ? await ipc.getRecentFiles() : stateRef.current.recentFiles;
+
     setState(s => ({
       ...s,
+      appMode: 'testing',
       scenario: fresh,
-      filePath: null,
-      currentView: 'editor',
+      filePath: savedPath,
+      currentView: 'runs',
       currentRunId: null,
       isDirty: false,
       pendingOpen: null,
+      recentFiles,
     }));
-  }, []);
+  }, [showFlash]);
 
-  const handleFileOpened = useCallback(async (result: { filePath: string; scenario: Scenario }) => {
-    const recentFiles = await ipc.getRecentFiles();
+  const applyOpenedFile = useCallback((
+    result: { filePath: string; scenario: Scenario },
+    mode: AppMode,
+    recentFiles: string[],
+  ) => {
     const hasRuns = result.scenario.runs && result.scenario.runs.length > 0;
 
-    if (hasRuns) {
+    if (mode === 'library') {
       setState(s => ({
         ...s,
-        pendingOpen: { scenario: result.scenario, filePath: result.filePath },
-        recentFiles,
-      }));
-    } else {
-      setState(s => ({
-        ...s,
+        appMode: 'library',
         scenario: result.scenario,
         filePath: result.filePath,
         currentView: 'editor',
@@ -153,20 +261,72 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
         recentFiles,
         pendingOpen: null,
       }));
+      return;
+    }
+
+    if (hasRuns) {
+      setState(s => ({
+        ...s,
+        appMode: 'testing',
+        pendingOpen: { scenario: result.scenario, filePath: result.filePath },
+        recentFiles,
+      }));
+    } else {
+      setState(s => ({
+        ...s,
+        appMode: 'testing',
+        scenario: result.scenario,
+        filePath: result.filePath,
+        currentView: 'runs',
+        currentRunId: null,
+        isDirty: false,
+        recentFiles,
+        pendingOpen: null,
+      }));
     }
   }, []);
+
+  const handleOpenError = useCallback((error: ipc.ScenarioReadError) => {
+    const message =
+      error === 'invalid_schema'
+        ? 'Nieprawidłowy format pliku scenariusza.'
+        : 'Nie udało się odczytać pliku scenariusza.';
+    showFlash(message);
+  }, [showFlash]);
 
   const openScenarioAction = useCallback(async () => {
     const result = await ipc.openScenario();
     if (!result) return;
-    await handleFileOpened(result);
-  }, [handleFileOpened]);
+    if ('error' in result) {
+      handleOpenError(result.error);
+      return;
+    }
+    const recentFiles = await ipc.getRecentFiles();
+    const mode = stateRef.current.appMode === 'library' ? 'library' : 'testing';
+    applyOpenedFile(result, mode, recentFiles);
+  }, [applyOpenedFile, handleOpenError]);
 
-  const openRecentFile = useCallback(async (path: string) => {
+  const openRecentFile = useCallback(async (path: string, preferMode: AppMode = 'testing') => {
     const result = await ipc.readScenario(path);
     if (!result) return;
-    await handleFileOpened(result);
-  }, [handleFileOpened]);
+    if ('error' in result) {
+      handleOpenError(result.error);
+      return;
+    }
+    const recentFiles = await ipc.getRecentFiles();
+    applyOpenedFile(result, preferMode, recentFiles);
+  }, [applyOpenedFile, handleOpenError]);
+
+  const openSavedScenario = useCallback(async (filePath: string) => {
+    const result = await ipc.readScenario(filePath);
+    if (!result) return;
+    if ('error' in result) {
+      handleOpenError(result.error);
+      return;
+    }
+    const recentFiles = await ipc.getRecentFiles();
+    applyOpenedFile(result, 'testing', recentFiles);
+  }, [applyOpenedFile, handleOpenError]);
 
   const confirmOpen = useCallback((view: View) => {
     const pending = stateRef.current.pendingOpen;
@@ -182,8 +342,27 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const confirmOpenNewRun = useCallback(() => {
+    const pending = stateRef.current.pendingOpen;
+    if (!pending) return;
+    const run = createRun();
+    const scenarioWithRun: Scenario = {
+      ...pending.scenario,
+      runs: [...pending.scenario.runs, run],
+    };
+    setState(s => ({
+      ...s,
+      scenario: scenarioWithRun,
+      filePath: pending.filePath,
+      currentView: 'runner',
+      currentRunId: run.id,
+      isDirty: true,
+      pendingOpen: null,
+    }));
+  }, []);
+
   const cancelOpen = useCallback(() => {
-    setState(s => ({ ...s, pendingOpen: null }));
+    setState(s => ({ ...s, pendingOpen: null, currentView: 'picker' }));
   }, []);
 
   const saveScenarioAction = useCallback(async () => {
@@ -196,14 +375,27 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const saveAsScenario = useCallback(async () => {
+  const saveAsScenario = useCallback(async (): Promise<string | null> => {
     const s = stateRef.current;
-    if (!s.scenario) return;
+    if (!s.scenario) return null;
     const savedPath = await ipc.saveScenario(null, s.scenario);
     if (savedPath) {
       const recentFiles = await ipc.getRecentFiles();
       setState(prev => ({ ...prev, filePath: savedPath, isDirty: false, recentFiles }));
     }
+    return savedPath;
+  }, []);
+
+  const ensureScenarioSaved = useCallback(async (): Promise<string | null> => {
+    const s = stateRef.current;
+    if (!s.scenario) return null;
+    if (s.filePath) return s.filePath;
+    const savedPath = await ipc.saveScenario(null, s.scenario, { autoSave: true });
+    if (savedPath) {
+      const recentFiles = await ipc.getRecentFiles();
+      setState(prev => ({ ...prev, filePath: savedPath, isDirty: false, recentFiles }));
+    }
+    return savedPath;
   }, []);
 
   const duplicateScenario = useCallback(async () => {
@@ -301,7 +493,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const createNewRun = useCallback((meta: Partial<RunMeta>): string => {
     const run = createRun(meta);
     updateScenario(s => ({ ...s, runs: [...s.runs, run] }));
-    setState(s => ({ ...s, currentRunId: run.id, currentView: 'runner' }));
+    setState(s => ({ ...s, currentRunId: run.id, currentView: 'runner', completedRunId: null }));
     return run.id;
   }, [updateScenario]);
 
@@ -312,12 +504,19 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
         r.id === runId ? { ...r, meta: { ...r.meta, completedAt: new Date().toISOString() } } : r
       ),
     }));
+    setState(s => ({ ...s, completedRunId: runId, currentRunId: runId }));
   }, [updateScenario]);
 
   const deleteRun = useCallback((runId: string) => {
     updateScenario(s => ({ ...s, runs: s.runs.filter(r => r.id !== runId) }));
-    setState(s => s.currentRunId === runId ? { ...s, currentRunId: null, currentView: 'runs' } : s);
+    setState(s => s.currentRunId === runId
+      ? { ...s, currentRunId: null, currentView: 'runs', completedRunId: null }
+      : s);
   }, [updateScenario]);
+
+  const selectRun = useCallback((runId: string) => {
+    setState(s => ({ ...s, currentRunId: runId }));
+  }, []);
 
   const updateResult = useCallback((runId: string, itemId: string, updates: Partial<ItemResult>) => {
     updateScenario(s => ({
@@ -339,7 +538,10 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     let currentPath = s.filePath;
     if (!currentPath) {
       currentPath = await ipc.saveScenario(null, s.scenario!);
-      if (!currentPath) return;
+      if (!currentPath) {
+        showFlash('Zapisz scenariusz na dysku, aby dołączyć screenshoty.');
+        return;
+      }
       setState(prev => ({ ...prev, filePath: currentPath }));
     }
     const result = await ipc.copyScreenshot(currentPath);
@@ -356,13 +558,17 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
             ...r.results,
             [itemId]: {
               ...existing,
-              screenshots: [...existing.screenshots, { filename: result.filename, caption: '' }],
+              screenshots: [...existing.screenshots, {
+                filename: result.filename,
+                relativePath: result.relativePath,
+                caption: '',
+              }],
             },
           },
         };
       }),
     }));
-  }, [updateScenario]);
+  }, [updateScenario, showFlash]);
 
   const resetSection = useCallback((runId: string, sectionId: string) => {
     const s = stateRef.current;
@@ -408,14 +614,23 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const value: ScenarioContextType = {
     ...state,
     navigate,
+    enterTestingMode,
+    enterLibraryMode,
+    returnToHub,
+    switchToLibraryForEdit,
+    dismissCompletedBanner,
     newScenario,
     loadFromTemplate,
     openScenario: openScenarioAction,
     openRecentFile,
+    openSavedScenario,
     confirmOpen,
+    confirmOpenNewRun,
     cancelOpen,
+    showFlash,
     saveScenario: saveScenarioAction,
     saveAsScenario,
+    ensureScenarioSaved,
     duplicateScenario,
     updateMeta,
     addSection,
@@ -429,6 +644,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     createNewRun,
     completeRun,
     deleteRun,
+    selectRun,
     updateResult,
     setItemStatus,
     addScreenshot,
