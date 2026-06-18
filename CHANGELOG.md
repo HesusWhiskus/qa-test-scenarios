@@ -4,6 +4,11 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 
+## [1.1.1] - 2026-06-18
+
+### Changed
+- Aktualizacja wbudowanych szablonów scenariuszy
+
 ## [1.1.0] - 2026-06-18
 
 ### Added
