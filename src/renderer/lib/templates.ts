@@ -76,9 +76,9 @@ const profilAgenta: Scenario = {
 const strefaAgenta: Scenario = {
   version: 1,
   meta: {
-    title: 'Strefa Agenta (DCU)',
+    title: 'Strefa Agenta',
     description: 'Dashboard, nawigacja, szkolenia, dokumenty, baza wiedzy, konkursy',
-    tags: ['dcu', 'strefa-agenta'],
+    tags: ['strefa-agenta'],
     createdAt: now,
     updatedAt: now,
   },
@@ -263,9 +263,9 @@ export const builtinTemplates: Template[] = [
   },
   {
     id: 'strefa-agenta',
-    title: 'Strefa Agenta (DCU)',
+    title: 'Strefa Agenta',
     description: 'Dashboard, nawigacja, szkolenia, dokumenty, baza wiedzy',
-    tags: ['dcu'],
+    tags: ['strefa-agenta'],
     scenario: strefaAgenta,
   },
   {
