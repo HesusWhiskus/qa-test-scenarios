@@ -32,15 +32,19 @@ jobs:
 
       - run: npm run make
 
+      - name: List build output
+        shell: bash
+        run: find out/make -type f | head -50
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.platform }}
           path: |
-            out/make/**/*.exe
+            out/make/squirrel.windows/**/*
+            out/make/zip/**/*
             out/make/**/*.dmg
-            out/make/**/*.zip
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   release:
     needs: build
@@ -59,7 +63,6 @@ jobs:
         with:
           draft: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
-            artifacts/**/*.exe
-            artifacts/**/*.dmg
-            artifacts/**/*.zip
+            artifacts/**/*
