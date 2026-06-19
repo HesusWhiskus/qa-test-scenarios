@@ -34,7 +34,7 @@ jobs:
 
       - name: List build output
         shell: bash
-        run: find out/make -type f | head -50
+        run: find out -type f 2>/dev/null | head -80
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
