@@ -1,21 +1,30 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu, session, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, session, screen, shell, clipboard, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ScenarioSchema } from '../renderer/types/schema';
+import { migrateScenario } from '../renderer/types/schema';
+import { createSettingsStore } from './settings';
+import {
+  testYouTrackConnection,
+  createYouTrackIssue,
+  uploadYouTrackAttachment,
+  searchYouTrackIssues,
+} from './youtrack-client';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
 const IS_DEV = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 
-// Stable userData path independent of Squirrel version subdirectories
 app.setAppLogsPath();
 const USER_DATA_DIR = app.getPath('userData');
 const SETTINGS_PATH = path.join(USER_DATA_DIR, 'settings.json');
 const SCENARIOS_DIR = path.join(USER_DATA_DIR, 'scenarios');
 
+const settingsStore = createSettingsStore(SETTINGS_PATH);
+const { loadSettings, updateSettings, addRecentFile } = settingsStore;
+
 // ---------------------------------------------------------------------------
-// Path validation — prevents path traversal attacks from renderer
+// Path validation
 // ---------------------------------------------------------------------------
 
 function assertJsonExtension(filePath: string): void {
@@ -43,32 +52,13 @@ function assertImageExtension(filename: string): void {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Settings persistence
-// ---------------------------------------------------------------------------
-
-interface WindowBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  maximized: boolean;
+function getScenarioFilesDir(scenarioPath: string): { filesDir: string; scenarioName: string } {
+  const scenarioDir = path.dirname(scenarioPath);
+  const scenarioName = path.basename(scenarioPath, '.json');
+  return { filesDir: path.join(scenarioDir, `${scenarioName}_files`), scenarioName };
 }
 
-interface AppSettings {
-  recentFiles: string[];
-  windowBounds?: WindowBounds;
-}
-
-function loadSettings(): AppSettings {
-  try {
-    return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'));
-  } catch {
-    return { recentFiles: [] };
-  }
-}
-
-function isVisibleOnAnyDisplay(bounds: WindowBounds): boolean {
+function isVisibleOnAnyDisplay(bounds: { x: number; y: number; width: number; height: number }): boolean {
   const displays = screen.getAllDisplays();
   return displays.some(display => {
     const { x, y, width, height } = display.workArea;
@@ -79,16 +69,6 @@ function isVisibleOnAnyDisplay(bounds: WindowBounds): boolean {
       bounds.y < y + height
     );
   });
-}
-
-function saveSettings(settings: AppSettings): void {
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
-}
-
-function addRecentFile(filePath: string): void {
-  const settings = loadSettings();
-  settings.recentFiles = [filePath, ...settings.recentFiles.filter(f => f !== filePath)].slice(0, 10);
-  saveSettings(settings);
 }
 
 function slugifyTitle(title: string): string {
@@ -125,9 +105,9 @@ function readScenarioFile(filePath: string): { filePath: string; content: unknow
     assertJsonExtension(filePath);
     const raw = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(raw);
-    const validated = ScenarioSchema.safeParse(parsed);
-    if (!validated.success) return { error: 'invalid_schema' };
-    return { filePath, content: validated.data };
+    const migrated = migrateScenario(parsed);
+    if (!migrated) return { error: 'invalid_schema' };
+    return { filePath, content: migrated };
   } catch {
     return { error: 'read_failed' };
   }
@@ -278,6 +258,30 @@ function listSavedScenarios(): SavedScenarioSummary[] {
   });
 }
 
+function saveScreenshotToDir(scenarioPath: string, sourceBuffer: Buffer, ext: string): { filename: string; relativePath: string } | null {
+  assertJsonExtension(scenarioPath);
+  const { filesDir, scenarioName } = getScenarioFilesDir(scenarioPath);
+  if (!fs.existsSync(filesDir)) fs.mkdirSync(filesDir, { recursive: true });
+  const filename = `screenshot_${Date.now()}${ext}`;
+  fs.writeFileSync(path.join(filesDir, filename), sourceBuffer);
+  return { filename, relativePath: `./${scenarioName}_files/${filename}` };
+}
+
+function resolveScreenshotPath(scenarioPath: string, filename: string): string | null {
+  try {
+    assertJsonExtension(scenarioPath);
+    assertSafeFilename(filename);
+    assertImageExtension(filename);
+  } catch {
+    return null;
+  }
+  const { filesDir } = getScenarioFilesDir(scenarioPath);
+  const resolvedPath = path.resolve(filesDir, filename);
+  if (!resolvedPath.startsWith(path.resolve(filesDir))) return null;
+  if (!fs.existsSync(resolvedPath)) return null;
+  return resolvedPath;
+}
+
 // ---------------------------------------------------------------------------
 // Window
 // ---------------------------------------------------------------------------
@@ -290,7 +294,7 @@ function saveWindowBounds() {
   const maximized = mainWindow.isMaximized();
   const bounds = maximized ? (settings.windowBounds || mainWindow.getBounds()) : mainWindow.getBounds();
   settings.windowBounds = { ...bounds, maximized };
-  saveSettings(settings);
+  settingsStore.saveSettings(settings);
 }
 
 function createWindow() {
@@ -336,7 +340,18 @@ function createWindow() {
     });
   }
 
-  mainWindow.once('ready-to-show', () => mainWindow?.show());
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+    if (IS_DEV) mainWindow?.webContents.openDevTools({ mode: 'detach' });
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+    console.error('Renderer failed to load:', errorCode, errorDescription, validatedURL);
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('Renderer process gone:', details);
+  });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -345,15 +360,11 @@ function createWindow() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Security policies (CSP, permissions)
-// ---------------------------------------------------------------------------
-
 function setupSecurityPolicies() {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = IS_DEV
-      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws:"
-      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'";
+      ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173 ws://localhost:5173; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'self' 'unsafe-inline' http://localhost:5173; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:5173 http://localhost:5173"
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'";
 
     callback({
       responseHeaders: {
@@ -370,7 +381,25 @@ function setupSecurityPolicies() {
 // IPC handlers
 // ---------------------------------------------------------------------------
 
-ipcMain.handle('get-settings', () => loadSettings());
+ipcMain.handle('get-settings', () => {
+  const s = loadSettings();
+  return {
+    ...s,
+    youtrack: { ...s.youtrack, token: s.youtrack.token ? '***' : '' },
+  };
+});
+
+ipcMain.handle('update-settings', (_event, partial: Parameters<typeof updateSettings>[0]) => {
+  const current = loadSettings();
+  if (partial.youtrack?.token === '***' || partial.youtrack?.token === '') {
+    if (partial.youtrack) partial.youtrack.token = current.youtrack.token;
+  }
+  const updated = updateSettings(partial);
+  return {
+    ...updated,
+    youtrack: { ...updated.youtrack, token: updated.youtrack.token ? '***' : '' },
+  };
+});
 
 ipcMain.handle('get-app-info', () => ({
   version: app.getVersion(),
@@ -384,6 +413,17 @@ ipcMain.handle('open-scenarios-dir', () => {
     fs.mkdirSync(SCENARIOS_DIR, { recursive: true });
   }
   shell.openPath(SCENARIOS_DIR);
+});
+
+ipcMain.handle('open-external-url', async (_event, url: string) => {
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    await shell.openExternal(url);
+    return true;
+  } catch {
+    return false;
+  }
 });
 
 ipcMain.handle('open-scenario', async () => {
@@ -428,13 +468,13 @@ ipcMain.handle('save-scenario', async (
   _event,
   { filePath, data, autoSave }: { filePath: string | null; data: unknown; autoSave?: boolean },
 ) => {
-  const parsed = ScenarioSchema.safeParse(data);
-  if (!parsed.success) return null;
+  const migrated = migrateScenario(data);
+  if (!migrated) return null;
 
   let targetPath = filePath;
   if (!targetPath) {
     if (autoSave) {
-      targetPath = getAutoSavePath(parsed.data.meta.title);
+      targetPath = getAutoSavePath(migrated.meta.title);
     } else {
       const result = await dialog.showSaveDialog(mainWindow!, {
         filters: [{ name: 'QA Scenario', extensions: ['json'] }],
@@ -444,7 +484,7 @@ ipcMain.handle('save-scenario', async (
     }
   }
   assertJsonExtension(targetPath);
-  fs.writeFileSync(targetPath, JSON.stringify(parsed.data, null, 2), 'utf-8');
+  fs.writeFileSync(targetPath, JSON.stringify(migrated, null, 2), 'utf-8');
   addRecentFile(targetPath);
   return targetPath;
 });
@@ -469,37 +509,21 @@ ipcMain.handle('copy-screenshot', async (_event, { scenarioPath }: { scenarioPat
   if (result.canceled || !result.filePaths[0]) return null;
 
   const sourcePath = result.filePaths[0];
-  const scenarioDir = path.dirname(scenarioPath);
-  const scenarioName = path.basename(scenarioPath, '.json');
-  const filesDir = path.join(scenarioDir, `${scenarioName}_files`);
-
-  if (!fs.existsSync(filesDir)) {
-    fs.mkdirSync(filesDir, { recursive: true });
-  }
-
   const ext = path.extname(sourcePath);
-  const filename = `screenshot_${Date.now()}${ext}`;
-  fs.copyFileSync(sourcePath, path.join(filesDir, filename));
+  const buffer = fs.readFileSync(sourcePath);
+  return saveScreenshotToDir(scenarioPath, buffer, ext);
+});
 
-  return { filename, relativePath: `./${scenarioName}_files/${filename}` };
+ipcMain.handle('paste-screenshot', async (_event, { scenarioPath }: { scenarioPath: string }) => {
+  const image = clipboard.readImage();
+  if (image.isEmpty()) return null;
+  const png = image.toPNG();
+  return saveScreenshotToDir(scenarioPath, png, '.png');
 });
 
 ipcMain.handle('read-screenshot', async (_event, { scenarioPath, filename }: { scenarioPath: string; filename: string }) => {
-  try {
-    assertJsonExtension(scenarioPath);
-    assertSafeFilename(filename);
-    assertImageExtension(filename);
-  } catch {
-    return null;
-  }
-
-  const scenarioDir = path.dirname(scenarioPath);
-  const scenarioName = path.basename(scenarioPath, '.json');
-  const resolvedPath = path.resolve(scenarioDir, `${scenarioName}_files`, filename);
-  const expectedDir = path.resolve(scenarioDir, `${scenarioName}_files`);
-
-  if (!resolvedPath.startsWith(expectedDir)) return null;
-  if (!fs.existsSync(resolvedPath)) return null;
+  const resolvedPath = resolveScreenshotPath(scenarioPath, filename);
+  if (!resolvedPath) return null;
 
   const data = fs.readFileSync(resolvedPath);
   const mimeMap: Record<string, string> = {
@@ -508,6 +532,67 @@ ipcMain.handle('read-screenshot', async (_event, { scenarioPath, filename }: { s
   };
   const mime = mimeMap[path.extname(filename).toLowerCase()] || 'image/png';
   return `data:${mime};base64,${data.toString('base64')}`;
+});
+
+ipcMain.handle('delete-screenshot', async (_event, { scenarioPath, filename }: { scenarioPath: string; filename: string }) => {
+  const resolvedPath = resolveScreenshotPath(scenarioPath, filename);
+  if (!resolvedPath) return false;
+  try {
+    fs.unlinkSync(resolvedPath);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('import-excel', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    filters: [{ name: 'Excel', extensions: ['xlsx', 'xls'] }],
+    properties: ['openFile'],
+  });
+  if (result.canceled || !result.filePaths[0]) return null;
+
+  const filePath = result.filePaths[0];
+  const buffer = fs.readFileSync(filePath);
+  const { parseExcelToScenario } = await import('./excel-import');
+  const parsed = await parseExcelToScenario(buffer, path.basename(filePath));
+  if ('error' in parsed) return parsed;
+  return parsed;
+});
+
+ipcMain.handle('youtrack-test-connection', async () => {
+  const settings = loadSettings();
+  return testYouTrackConnection(settings.youtrack);
+});
+
+ipcMain.handle('youtrack-search-issues', async (_event, query: string) => {
+  const settings = loadSettings();
+  return searchYouTrackIssues(settings.youtrack, query);
+});
+
+ipcMain.handle('youtrack-create-issue', async (_event, payload: {
+  summary: string;
+  description: string;
+  environment?: string;
+  buildVersion?: string;
+  scenarioPath?: string;
+  attachments?: { filename: string }[];
+}) => {
+  const settings = loadSettings();
+  const result = await createYouTrackIssue(settings.youtrack, payload);
+  if ('error' in result) return result;
+
+  if (payload.scenarioPath && payload.attachments?.length) {
+    for (const att of payload.attachments) {
+      const resolved = resolveScreenshotPath(payload.scenarioPath, att.filename);
+      if (resolved) {
+        const buffer = fs.readFileSync(resolved);
+        await uploadYouTrackAttachment(settings.youtrack, result.id, att.filename, buffer);
+      }
+    }
+  }
+
+  return result;
 });
 
 // ---------------------------------------------------------------------------

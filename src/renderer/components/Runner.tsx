@@ -1,30 +1,37 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useScenario } from '../hooks/useScenario';
 import type { Status, Section, Item } from '../types/schema';
-import { getRunStats } from '../types/schema';
+import { getRunStats, formatRunDuration } from '../types/schema';
 import { StatusSelector } from './shared/StatusBadge';
 import { ProgressBar } from './shared/ProgressBar';
+import { ScreenshotGallery } from './ScreenshotGallery';
+import * as ipc from '../lib/ipc';
 import {
-  Search, Camera, ChevronDown, ChevronRight,
-  RotateCcw, CheckCheck, Keyboard,
+  Search, Camera, ChevronDown, ChevronRight, Clipboard,
+  RotateCcw, CheckCheck, Keyboard, ExternalLink, Bug,
 } from 'lucide-react';
 
 type FilterMode = 'all' | 'incomplete' | 'failed' | 'regression';
 
 export function Runner() {
   const {
-    scenario, currentRunId,
-    setItemStatus, updateResult, addScreenshot,
+    scenario, filePath, currentRunId,
+    setItemStatus, updateResult, addScreenshot, pasteScreenshot,
+    removeScreenshot, updateScreenshotCaption,
     resetSection, bulkSetSection, getCurrentRun, selectRun, navigate,
+    createYouTrackIssue, appSettings,
   } = useScenario();
 
   const [filter, setFilter] = useState<FilterMode>('all');
   const [search, setSearch] = useState('');
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [expandedExpected, setExpandedExpected] = useState<Set<string>>(new Set());
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [creatingIssue, setCreatingIssue] = useState<string | null>(null);
 
   const run = getCurrentRun();
+  const youtrackConfigured = !!(appSettings?.youtrack.baseUrl && appSettings?.youtrack.projectId);
 
   const visibleItems = useMemo(() => {
     if (!scenario || !run) return [];
@@ -36,7 +43,11 @@ export function Runner() {
         const status = run.results[item.id]?.status || 'pending';
         if (filter === 'incomplete' && status !== 'pending') continue;
         if (filter === 'failed' && status !== 'fail') continue;
-        if (search && !item.title.toLowerCase().includes(search.toLowerCase())) continue;
+        if (search) {
+          const q = search.toLowerCase();
+          const hay = [item.title, item.testCaseId, item.expectedResult].join(' ').toLowerCase();
+          if (!hay.includes(q)) continue;
+        }
         items.push({ section, item });
       }
     }
@@ -94,6 +105,7 @@ export function Runner() {
         case 'f':
           e.preventDefault();
           setItemStatus(runId, currentItem.item.id, 'fail');
+          setExpandedNotes(prev => new Set(prev).add(currentItem.item.id));
           break;
         case 'b':
           e.preventDefault();
@@ -128,19 +140,36 @@ export function Runner() {
     });
   };
 
+  const handleOpenLink = (e: React.MouseEvent, url: string) => {
+    e.stopPropagation();
+    if (url) ipc.openExternalUrl(url);
+  };
+
+  const handleYouTrack = async (e: React.MouseEvent, sectionId: string, itemId: string) => {
+    e.stopPropagation();
+    if (!run) return;
+    setCreatingIssue(itemId);
+    try {
+      await createYouTrackIssue(run.id, sectionId, itemId);
+    } finally {
+      setCreatingIssue(null);
+    }
+  };
+
   if (!scenario || !run) {
     return <div className="p-8 text-center text-slate-400">Nie wybrano sesji. Przejdź do zakładki Sesje testowe.</div>;
   }
 
   const stats = getRunStats(run, scenario);
   const runs = [...scenario.runs].reverse();
+  const duration = formatRunDuration(run);
 
   const formatRunLabel = (r: typeof run) =>
     r.meta.name || `Sesja ${new Date(r.meta.startedAt).toLocaleString('pl-PL')}`;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-5 gap-4">
+      <div className="flex items-center justify-between mb-5 gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">{scenario.meta.title}</h2>
           {runs.length > 1 ? (
@@ -156,6 +185,11 @@ export function Runner() {
           ) : (
             run.meta.name && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{run.meta.name}</p>
           )}
+          <div className="text-[11px] text-slate-400 mt-1 flex gap-3 flex-wrap">
+            {run.meta.environment && <span>Env: {run.meta.environment}</span>}
+            {run.meta.buildVersion && <span>Build: {run.meta.buildVersion}</span>}
+            {duration && <span>Czas: {duration}</span>}
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
@@ -179,7 +213,7 @@ export function Runner() {
           <p className="font-medium mb-1 text-blue-700 dark:text-blue-300">Skróty klawiszowe:</p>
           <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">↑↓</kbd> lub <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">K/J</kbd> nawigacja</p>
           <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">P</kbd> pass · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">F</kbd> fail · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">B</kbd> blocked · <kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">S</kbd> skip</p>
-          <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">N</kbd> toggle notatki</p>
+          <p className="text-blue-600 dark:text-blue-400"><kbd className="px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-xs font-mono shadow-xs">N</kbd> toggle notatki · Ctrl+V wklej screenshot</p>
         </div>
       )}
 
@@ -250,6 +284,7 @@ export function Runner() {
                   const screenshots = result?.screenshots || [];
                   const isSelected = flatIdx === selectedIdx;
                   const isNotesOpen = expandedNotes.has(item.id);
+                  const showExpected = expandedExpected.has(item.id);
 
                   return (
                     <div
@@ -267,18 +302,64 @@ export function Runner() {
                           status={status}
                           onSelect={s => setItemStatus(run.id, item.id, s)}
                         />
-                        <span className={`flex-1 text-sm ${status === 'pass' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>
-                          {item.title}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          {item.testCaseId && (
+                            <span className="text-[10px] font-mono text-slate-400 mr-1.5">{item.testCaseId}</span>
+                          )}
+                          <span className={`text-sm ${status === 'pass' ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}`}>
+                            {item.title}
+                          </span>
+                          {item.expectedResult && (
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setExpandedExpected(prev => {
+                                  const next = new Set(prev);
+                                  next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                                  return next;
+                                });
+                              }}
+                              className="block text-[11px] text-slate-400 hover:text-slate-600 truncate max-w-full text-left"
+                            >
+                              Oczekiwany: {showExpected ? item.expectedResult : `${item.expectedResult.slice(0, 60)}${item.expectedResult.length > 60 ? '…' : ''}`}
+                            </button>
+                          )}
+                        </div>
                         {item.link && (
-                          <span className="text-[11px] text-blue-500 font-mono">{item.link}</span>
+                          <button
+                            type="button"
+                            onClick={e => handleOpenLink(e, item.link)}
+                            className="text-[11px] text-blue-500 hover:underline font-mono flex items-center gap-0.5 flex-shrink-0"
+                            title="Otwórz w YouTrack"
+                          >
+                            <ExternalLink size={11} /> issue
+                          </button>
+                        )}
+                        {(status === 'fail' || status === 'blocked') && youtrackConfigured && !item.link && (
+                          <button
+                            type="button"
+                            onClick={e => handleYouTrack(e, section.id, item.id)}
+                            disabled={creatingIssue === item.id}
+                            className="p-1 text-orange-400 hover:text-orange-600 transition-colors"
+                            title="Utwórz w YouTrack"
+                          >
+                            <Bug size={14} />
+                          </button>
                         )}
                         <button
                           onClick={e => { e.stopPropagation(); addScreenshot(run.id, item.id); }}
                           className="p-1 text-slate-300 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
-                          title="Dodaj screenshot"
+                          title="Dodaj screenshot z pliku"
                         >
                           <Camera size={14} />
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); pasteScreenshot(run.id, item.id); }}
+                          className="p-1 text-slate-300 hover:text-slate-500 dark:hover:text-slate-400 transition-colors"
+                          title="Wklej screenshot ze schowka"
+                        >
+                          <Clipboard size={14} />
                         </button>
                         <button
                           onClick={e => { e.stopPropagation(); toggleNotes(item.id); }}
@@ -289,24 +370,26 @@ export function Runner() {
                         </button>
                       </div>
                       {isNotesOpen && (
-                        <div className="mt-2 ml-16 space-y-2">
+                        <div className="mt-2 ml-16 space-y-2" onPaste={e => {
+                          if (e.clipboardData.types.includes('Files') || e.clipboardData.types.includes('image/png')) {
+                            e.preventDefault();
+                            pasteScreenshot(run.id, item.id);
+                          }
+                        }}>
                           <textarea
                             value={notes}
                             onChange={e => updateResult(run.id, item.id, { notes: e.target.value })}
                             placeholder="Notatki do tego kroku..."
                             className="w-full text-sm p-2.5 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none transition-shadow"
-                            rows={3}
+                            rows={4}
                             onClick={e => e.stopPropagation()}
                           />
-                          {screenshots.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {screenshots.map((ss, i) => (
-                                <div key={i} className="text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 text-slate-500">
-                                  <Camera size={11} /> {ss.caption || ss.filename}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <ScreenshotGallery
+                            scenarioPath={filePath}
+                            screenshots={screenshots}
+                            onRemove={filename => removeScreenshot(run.id, item.id, filename)}
+                            onCaptionChange={(filename, caption) => updateScreenshotCaption(run.id, item.id, filename, caption)}
+                          />
                         </div>
                       )}
                     </div>

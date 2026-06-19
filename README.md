@@ -28,12 +28,27 @@ Pełna lista zmian: [`CHANGELOG.md`](CHANGELOG.md) w repozytorium lub **Ustawien
 
 ## Pobieranie
 
-Pobierz najnowszą wersję ze strony [Releases](https://github.com/HesusWhiskus/qa-test-scenarios/releases):
+Pobierz najnowszą wersję ze strony [Releases](https://github.com/HesusWhiskus/qa-test-scenarios/releases).
+
+Instalatory dla **Windows i macOS** budowane są automatycznie przez GitHub Actions przy każdym tagu `v*`.
 
 | System  | Plik | Typ |
 |---------|------|-----|
 | Windows | `QA-Test-Scenarios-Setup.exe` | Instalator |
+| Windows | `QA Test Scenarios-win32-x64-*.zip` | Wersja przenośna |
 | macOS   | `QA-Test-Scenarios.dmg` | Instalator |
+| macOS   | `QA.Test.Scenarios-darwin-arm64-*.zip` | Wersja przenośna |
+
+### Windows
+
+1. Pobierz `QA-Test-Scenarios-Setup.exe` i uruchom instalator.
+2. Przy pierwszym uruchomieniu Windows może wyświetlić ostrzeżenie — kliknij **Więcej informacji** → **Uruchom mimo to**.
+
+### macOS
+
+1. Pobierz `QA-Test-Scenarios.dmg`.
+2. Otwórz plik `.dmg` i przeciągnij aplikację do folderu **Applications**.
+3. Przy pierwszym uruchomieniu: prawy przycisk na ikonie → **Otwórz** → potwierdź **Otwórz** (Gatekeeper).
 
 ## Skróty klawiszowe (checklista)
 

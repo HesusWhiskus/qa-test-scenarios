@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useScenario } from '../hooks/useScenario';
-import { getRunStats, getAllItems } from '../types/schema';
+import { getRunStats, getAllItems, formatRunDuration } from '../types/schema';
 import { ProgressBar } from './shared/ProgressBar';
-import { Plus, Play, FileDown, Trash2, CheckCircle, FileText } from 'lucide-react';
+import { RunCompare } from './RunCompare';
+import { Plus, Play, FileDown, Trash2, CheckCircle, FileText, RotateCcw } from 'lucide-react';
 
 export function RunList() {
-  const { scenario, filePath, navigate, createNewRun, deleteRun, completeRun, ensureScenarioSaved, showFlash } = useScenario();
+  const { scenario, filePath, navigate, createNewRun, deleteRun, completeRun, ensureScenarioSaved, showFlash, cloneRetestRun, appSettings } = useScenario();
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ name: '', environment: '', buildVersion: '', tester: '' });
+
+  useEffect(() => {
+    if (appSettings?.profile) {
+      setForm(f => ({
+        name: f.name,
+        environment: f.environment || appSettings.profile.defaultEnvironment,
+        buildVersion: f.buildVersion || appSettings.profile.defaultBuildVersion,
+        tester: f.tester || appSettings.profile.defaultTester,
+      }));
+    }
+  }, [appSettings]);
 
   if (!scenario) return null;
 
@@ -21,12 +33,18 @@ export function RunList() {
     }
     createNewRun(form);
     setShowNew(false);
-    setForm({ name: '', environment: '', buildVersion: '', tester: '' });
+    setForm({
+      name: '',
+      environment: appSettings?.profile.defaultEnvironment || '',
+      buildVersion: appSettings?.profile.defaultBuildVersion || '',
+      tester: appSettings?.profile.defaultTester || '',
+    });
   };
 
   const runs = [...scenario.runs].reverse();
   const totalItems = getAllItems(scenario).length;
   const totalSections = scenario.sections.length;
+  const environments = appSettings?.profile.environments || [];
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -55,26 +73,59 @@ export function RunList() {
         </div>
       </div>
 
+      <RunCompare />
+
       {showNew && (
         <div className="mb-6 p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800">
           <h3 className="font-semibold text-sm mb-3 text-slate-800 dark:text-slate-200">Nowa sesja testowa</h3>
           <div className="grid grid-cols-2 gap-3 mb-3">
-            {[
-              { key: 'name', label: 'Nazwa (opcjonalnie)', placeholder: 'np. Regresja sprint 42' },
-              { key: 'environment', label: 'Środowisko', placeholder: 'np. staging, production' },
-              { key: 'buildVersion', label: 'Wersja buildu', placeholder: 'np. 2.4.1' },
-              { key: 'tester', label: 'Tester', placeholder: 'np. Jan Kowalski' },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key}>
-                <label className="block text-[11px] font-medium mb-1 text-slate-400">{label}</label>
+            <div className="col-span-2">
+              <label className="block text-[11px] font-medium mb-1 text-slate-400">Nazwa (opcjonalnie)</label>
+              <input
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="np. Regresja sprint 42"
+                className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium mb-1 text-slate-400">Środowisko</label>
+              {environments.length > 0 ? (
+                <select
+                  value={form.environment}
+                  onChange={e => setForm(f => ({ ...f, environment: e.target.value }))}
+                  className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
+                >
+                  <option value="">— wybierz —</option>
+                  {environments.map(env => <option key={env} value={env}>{env}</option>)}
+                </select>
+              ) : (
                 <input
-                  value={form[key as keyof typeof form]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-colors"
+                  value={form.environment}
+                  onChange={e => setForm(f => ({ ...f, environment: e.target.value }))}
+                  placeholder="np. staging"
+                  className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
                 />
-              </div>
-            ))}
+              )}
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium mb-1 text-slate-400">Wersja buildu</label>
+              <input
+                value={form.buildVersion}
+                onChange={e => setForm(f => ({ ...f, buildVersion: e.target.value }))}
+                placeholder="np. 2.4.1"
+                className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-[11px] font-medium mb-1 text-slate-400">Tester</label>
+              <input
+                value={form.tester}
+                onChange={e => setForm(f => ({ ...f, tester: e.target.value }))}
+                placeholder="np. Jan Kowalski"
+                className="w-full px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
+              />
+            </div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleCreate} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">Rozpocznij sesję</button>
@@ -93,6 +144,7 @@ export function RunList() {
           {runs.map(run => {
             const stats = getRunStats(run, scenario);
             const isComplete = !!run.meta.completedAt;
+            const duration = formatRunDuration(run);
             return (
               <div key={run.id} className="p-4 bg-white dark:bg-slate-900 rounded-lg shadow-xs border border-slate-200/60 dark:border-slate-800 hover:shadow-card transition-shadow">
                 <div className="flex items-start justify-between mb-2.5">
@@ -100,17 +152,37 @@ export function RunList() {
                     <h3 className="font-semibold text-sm text-slate-800 dark:text-slate-200">
                       {run.meta.name || `Sesja ${new Date(run.meta.startedAt).toLocaleString('pl-PL')}`}
                     </h3>
-                    <div className="text-[11px] text-slate-400 flex gap-3 mt-0.5">
+                    <div className="text-[11px] text-slate-400 flex gap-3 mt-0.5 flex-wrap">
                       {run.meta.environment && <span>Env: {run.meta.environment}</span>}
                       {run.meta.buildVersion && <span>Build: {run.meta.buildVersion}</span>}
                       {run.meta.tester && <span>Tester: {run.meta.tester}</span>}
+                      {duration && <span>Czas: {duration}</span>}
+                      {run.meta.clonedFromRunId && <span className="text-violet-500">Re-test</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
                     {isComplete && (
                       <span className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mr-1">
                         <CheckCircle size={13} /> Zakończony
                       </span>
+                    )}
+                    {isComplete && (
+                      <>
+                        <button
+                          onClick={() => cloneRetestRun(run.id, false)}
+                          className="px-2.5 py-1 text-[13px] bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 rounded-lg hover:bg-violet-100 transition-colors"
+                          title="Nowa sesja z zachowaniem pass/skipped"
+                        >
+                          <RotateCcw size={13} className="inline mr-1" />Re-test
+                        </button>
+                        <button
+                          onClick={() => cloneRetestRun(run.id, true)}
+                          className="px-2.5 py-1 text-[13px] bg-orange-50 dark:bg-orange-950/40 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors"
+                          title="Tylko poprzednie fail/blocked"
+                        >
+                          Re-test fail
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => navigate('runner', run.id)}

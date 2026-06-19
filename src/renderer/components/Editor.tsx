@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useScenario } from '../hooks/useScenario';
 import {
   Plus, Trash2, ChevronUp, ChevronDown, GripVertical,
-  Tag, ChevronRight,
+  Tag, ChevronRight, X,
 } from 'lucide-react';
 
 export function Editor() {
@@ -16,11 +16,21 @@ export function Editor() {
   const [newSectionLevel, setNewSectionLevel] = useState<1 | 2>(1);
   const [newItemInputs, setNewItemInputs] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(() => new Set());
+  const [tagInput, setTagInput] = useState('');
 
   if (!scenario) return null;
 
   const toggleExpand = (id: string) => {
     setExpandedSections(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleItemExpand = (id: string) => {
+    setExpandedItems(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -49,6 +59,13 @@ export function Editor() {
     updateSection(sectionId, { visibilityTags: tags });
   };
 
+  const addScenarioTag = () => {
+    const t = tagInput.trim();
+    if (!t || scenario.meta.tags.includes(t)) return;
+    updateMeta({ tags: [...scenario.meta.tags, t] });
+    setTagInput('');
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="mb-8">
@@ -61,10 +78,31 @@ export function Editor() {
         <textarea
           value={scenario.meta.description}
           onChange={e => updateMeta({ description: e.target.value })}
-          className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 border border-slate-200 dark:border-slate-800 shadow-xs transition-shadow"
+          className="w-full bg-white dark:bg-slate-900 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 border border-slate-200 dark:border-slate-800 shadow-xs transition-shadow mb-3"
           rows={2}
           placeholder="Opis scenariusza (opcjonalnie)"
         />
+        <div>
+          <label className="text-[11px] font-medium text-slate-400 mb-1 block">Tagi scenariusza</label>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {scenario.meta.tags.map(tag => (
+              <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 text-xs rounded-full">
+                {tag}
+                <button type="button" onClick={() => updateMeta({ tags: scenario.meta.tags.filter(t => t !== tag) })} className="hover:text-red-500"><X size={10} /></button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={tagInput}
+              onChange={e => setTagInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addScenarioTag()}
+              placeholder="Dodaj tag"
+              className="flex-1 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800"
+            />
+            <button type="button" onClick={addScenarioTag} className="px-3 py-1.5 text-sm bg-slate-200 dark:bg-slate-700 rounded-lg">Dodaj</button>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-3 mb-6">
@@ -116,26 +154,61 @@ export function Editor() {
               </div>
 
               {expanded && (
-                <div className="px-3 py-2.5 space-y-1 border-t border-slate-100 dark:border-slate-800/50">
-                  {section.items.map((item, iIdx) => (
-                    <div key={item.id} className="flex items-center gap-2 group py-0.5">
-                      <GripVertical size={12} className="text-slate-200 dark:text-slate-700" />
-                      <input
-                        value={item.title}
-                        onChange={e => updateItem(section.id, item.id, { title: e.target.value })}
-                        className="flex-1 text-sm bg-transparent border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600 focus:outline-none py-1 text-slate-700 dark:text-slate-300"
-                      />
-                      <input
-                        value={item.link || ''}
-                        onChange={e => updateItem(section.id, item.id, { link: e.target.value })}
-                        placeholder="Link/Issue"
-                        className="w-28 text-[11px] bg-transparent border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600 focus:outline-none py-1 text-slate-400 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
-                      />
-                      <button onClick={() => moveItem(section.id, item.id, 'up')} disabled={iIdx === 0} className="p-0.5 text-slate-300 hover:text-slate-600 disabled:opacity-20 opacity-0 group-hover:opacity-100 transition-all"><ChevronUp size={13} /></button>
-                      <button onClick={() => moveItem(section.id, item.id, 'down')} disabled={iIdx === section.items.length - 1} className="p-0.5 text-slate-300 hover:text-slate-600 disabled:opacity-20 opacity-0 group-hover:opacity-100 transition-all"><ChevronDown size={13} /></button>
-                      <button onClick={() => removeItem(section.id, item.id)} className="p-0.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={13} /></button>
-                    </div>
-                  ))}
+                <div className="px-3 py-2.5 space-y-2 border-t border-slate-100 dark:border-slate-800/50">
+                  {section.items.map((item, iIdx) => {
+                    const itemExpanded = expandedItems.has(item.id);
+                    return (
+                      <div key={item.id} className="border border-slate-100 dark:border-slate-800 rounded-lg p-2">
+                        <div className="flex items-center gap-2 group">
+                          <button type="button" onClick={() => toggleItemExpand(item.id)} className="text-slate-400">
+                            <ChevronRight size={12} className={`transition-transform ${itemExpanded ? 'rotate-90' : ''}`} />
+                          </button>
+                          <input
+                            value={item.testCaseId}
+                            onChange={e => updateItem(section.id, item.id, { testCaseId: e.target.value })}
+                            placeholder="TC-ID"
+                            className="w-20 text-[11px] font-mono bg-transparent border-b border-transparent focus:border-slate-300 focus:outline-none text-slate-400"
+                          />
+                          <input
+                            value={item.title}
+                            onChange={e => updateItem(section.id, item.id, { title: e.target.value })}
+                            className="flex-1 text-sm bg-transparent border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600 focus:outline-none py-1 text-slate-700 dark:text-slate-300"
+                          />
+                          <input
+                            value={item.link || ''}
+                            onChange={e => updateItem(section.id, item.id, { link: e.target.value })}
+                            placeholder="Link/Issue"
+                            className="w-28 text-[11px] bg-transparent border-b border-transparent focus:border-slate-300 focus:outline-none py-1 text-slate-400"
+                          />
+                          <button onClick={() => moveItem(section.id, item.id, 'up')} disabled={iIdx === 0} className="p-0.5 text-slate-300 hover:text-slate-600 disabled:opacity-20"><ChevronUp size={13} /></button>
+                          <button onClick={() => moveItem(section.id, item.id, 'down')} disabled={iIdx === section.items.length - 1} className="p-0.5 text-slate-300 hover:text-slate-600 disabled:opacity-20"><ChevronDown size={13} /></button>
+                          <button onClick={() => removeItem(section.id, item.id)} className="p-0.5 text-slate-200 hover:text-red-500"><Trash2 size={13} /></button>
+                        </div>
+                        {itemExpanded && (
+                          <div className="mt-2 ml-5 space-y-2">
+                            <div>
+                              <label className="text-[10px] text-slate-400">Warunki wstępne</label>
+                              <textarea
+                                value={item.preconditions}
+                                onChange={e => updateItem(section.id, item.id, { preconditions: e.target.value })}
+                                rows={2}
+                                className="w-full text-xs p-2 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400">Oczekiwany rezultat</label>
+                              <textarea
+                                value={item.expectedResult}
+                                onChange={e => updateItem(section.id, item.id, { expectedResult: e.target.value })}
+                                rows={2}
+                                className="w-full text-xs p-2 border border-slate-200 dark:border-slate-700 rounded bg-slate-50 dark:bg-slate-800"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   <div className="flex items-center gap-2 pt-1">
                     <Plus size={12} className="text-slate-300" />
                     <input

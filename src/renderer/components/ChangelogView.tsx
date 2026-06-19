@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useScenario } from '../hooks/useScenario';
 import changelogRaw from '../../../CHANGELOG.md?raw';
 import { parseChangelog } from '../lib/parse-changelog';
@@ -7,6 +8,7 @@ const releases = parseChangelog(changelogRaw);
 
 export function ChangelogView() {
   const { navigate, appMode } = useScenario();
+  const parsedReleases = useMemo(() => releases, []);
 
   const goBack = () => {
     if (appMode === 'hub') navigate('hub');
@@ -34,7 +36,7 @@ export function ChangelogView() {
       </div>
 
       <div className="space-y-6">
-        {releases.map(release => (
+        {parsedReleases.map(release => (
           <div
             key={release.version}
             className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/60 dark:border-slate-800 shadow-xs overflow-hidden"

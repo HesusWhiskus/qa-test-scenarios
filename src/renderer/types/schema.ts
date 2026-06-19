@@ -15,6 +15,7 @@ export const ItemResultSchema = z.object({
   status: StatusEnum.default('pending'),
   notes: z.string().default(''),
   screenshots: z.array(ScreenshotSchema).default([]),
+  testedAt: z.string().optional(),
 });
 export type ItemResult = z.infer<typeof ItemResultSchema>;
 
@@ -22,6 +23,9 @@ export const ItemSchema = z.object({
   id: z.string(),
   title: z.string(),
   link: z.string().default(''),
+  testCaseId: z.string().default(''),
+  preconditions: z.string().default(''),
+  expectedResult: z.string().default(''),
 });
 export type Item = z.infer<typeof ItemSchema>;
 
@@ -41,6 +45,7 @@ export const RunMetaSchema = z.object({
   tester: z.string().default(''),
   startedAt: z.string(),
   completedAt: z.string().optional(),
+  clonedFromRunId: z.string().optional(),
 });
 export type RunMeta = z.infer<typeof RunMetaSchema>;
 
@@ -71,7 +76,7 @@ export type Scenario = z.infer<typeof ScenarioSchema>;
 export function createScenario(title: string): Scenario {
   const now = new Date().toISOString();
   return {
-    version: 1,
+    version: 2,
     meta: { title, description: '', tags: [], createdAt: now, updatedAt: now },
     sections: [],
     runs: [],
@@ -83,7 +88,7 @@ export function createSection(title: string, level: 1 | 2 = 1): Section {
 }
 
 export function createItem(title: string): Item {
-  return { id: uuidv4(), title, link: '' };
+  return { id: uuidv4(), title, link: '', testCaseId: '', preconditions: '', expectedResult: '' };
 }
 
 export function createRun(meta: Partial<RunMeta> = {}): Run {
@@ -120,4 +125,36 @@ export function getRunStats(run: Run, scenario: Scenario) {
     }
   }
   return { total, pass, fail, blocked, skipped, pending, percent: total ? Math.round((pass / total) * 100) : 0 };
+}
+
+export function formatRunDuration(run: Run): string | null {
+  if (!run.meta.completedAt) return null;
+  const ms = new Date(run.meta.completedAt).getTime() - new Date(run.meta.startedAt).getTime();
+  if (ms < 0) return null;
+  const mins = Math.floor(ms / 60000);
+  const hours = Math.floor(mins / 60);
+  if (hours > 0) return `${hours}h ${mins % 60}m`;
+  if (mins > 0) return `${mins} min`;
+  return `${Math.round(ms / 1000)} s`;
+}
+
+export function migrateScenario(data: unknown): Scenario | null {
+  if (!data || typeof data !== 'object') return null;
+  const raw = data as Record<string, unknown>;
+  const version = typeof raw.version === 'number' ? raw.version : 1;
+
+  if (version < 2 && Array.isArray(raw.sections)) {
+    for (const section of raw.sections as Record<string, unknown>[]) {
+      if (!Array.isArray(section.items)) continue;
+      for (const item of section.items as Record<string, unknown>[]) {
+        if (item.testCaseId === undefined) item.testCaseId = '';
+        if (item.preconditions === undefined) item.preconditions = '';
+        if (item.expectedResult === undefined) item.expectedResult = '';
+      }
+    }
+    raw.version = 2;
+  }
+
+  const validated = ScenarioSchema.safeParse(raw);
+  return validated.success ? validated.data : null;
 }

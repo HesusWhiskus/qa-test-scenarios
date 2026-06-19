@@ -1,9 +1,13 @@
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
-import type { Scenario, Section, Item, Run, RunMeta, ItemResult, Status } from '../types/schema';
+import type { Scenario, Section, Item, Run, RunMeta, ItemResult, Status, Screenshot } from '../types/schema';
 import { createScenario, createSection, createItem, createRun } from '../types/schema';
+import { applyFailNoteTemplate } from '../lib/settings-utils';
+import { buildRetestResults } from '../lib/run-diff';
+import { buildYouTrackDescription } from '../lib/markdown-export';
 import * as ipc from '../lib/ipc';
+import type { AppSettings, TesterProfile } from '../lib/ipc';
 
-export type AppMode = 'hub' | 'testing' | 'library';
+export type AppMode = 'startup' | 'hub' | 'testing' | 'library';
 export type View = 'hub' | 'picker' | 'catalog' | 'editor' | 'runs' | 'runner' | 'export' | 'help' | 'settings' | 'changelog';
 
 interface PendingOpen {
@@ -22,6 +26,7 @@ interface ScenarioState {
   pendingOpen: PendingOpen | null;
   flashMessage: string | null;
   completedRunId: string | null;
+  appSettings: AppSettings | null;
 }
 
 interface ScenarioContextType extends ScenarioState {
@@ -60,8 +65,16 @@ interface ScenarioContextType extends ScenarioState {
   updateResult: (runId: string, itemId: string, updates: Partial<ItemResult>) => void;
   setItemStatus: (runId: string, itemId: string, status: Status) => void;
   addScreenshot: (runId: string, itemId: string) => Promise<void>;
+  pasteScreenshot: (runId: string, itemId: string) => Promise<void>;
+  removeScreenshot: (runId: string, itemId: string, filename: string) => Promise<void>;
+  updateScreenshotCaption: (runId: string, itemId: string, filename: string, caption: string) => void;
   resetSection: (runId: string, sectionId: string) => void;
   bulkSetSection: (runId: string, sectionId: string, status: Status) => void;
+  cloneRetestRun: (sourceRunId: string, onlyFailed?: boolean) => string;
+  importExcelScenario: () => Promise<void>;
+  createYouTrackIssue: (runId: string, sectionId: string, itemId: string) => Promise<string | null>;
+  refreshSettings: () => Promise<void>;
+  completeStartup: (profile: TesterProfile) => Promise<void>;
   getCurrentRun: () => Run | null;
 }
 
@@ -78,7 +91,7 @@ function cloneFreshScenario(scenario: Scenario): Scenario {
 
 export function ScenarioProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ScenarioState>({
-    appMode: 'hub',
+    appMode: 'startup',
     scenario: null,
     filePath: null,
     currentView: 'hub',
@@ -88,6 +101,7 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     pendingOpen: null,
     flashMessage: null,
     completedRunId: null,
+    appSettings: null,
   });
 
   const stateRef = useRef(state);
@@ -103,9 +117,24 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     }, 5000);
   }, []);
 
+  const refreshSettings = useCallback(async () => {
+    const settings = await ipc.getSettings();
+    setState(s => ({ ...s, appSettings: settings }));
+  }, []);
+
+  const completeStartup = useCallback(async (profile: TesterProfile) => {
+    const settings = await ipc.updateSettings({ profile });
+    setState(s => ({
+      ...s,
+      appSettings: settings,
+      appMode: 'hub',
+      currentView: 'hub',
+    }));
+  }, []);
+
   useEffect(() => {
-    ipc.getRecentFiles().then(files => {
-      setState(s => ({ ...s, recentFiles: files }));
+    Promise.all([ipc.getRecentFiles(), ipc.getSettings()]).then(([files, settings]) => {
+      setState(s => ({ ...s, recentFiles: files, appSettings: settings }));
     });
   }, []);
 
@@ -530,8 +559,44 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   }, [updateScenario]);
 
   const setItemStatus = useCallback((runId: string, itemId: string, status: Status) => {
-    updateResult(runId, itemId, { status });
+    const s = stateRef.current;
+    const run = s.scenario?.runs.find(r => r.id === runId);
+    const existing = run?.results[itemId];
+    const now = new Date().toISOString();
+
+    if (status === 'fail' && !existing?.notes?.trim() && s.appSettings?.profile.failNoteTemplate) {
+      const item = s.scenario?.sections.flatMap(sec => sec.items).find(i => i.id === itemId);
+      const notes = applyFailNoteTemplate(s.appSettings.profile.failNoteTemplate, {
+        environment: run?.meta.environment || s.appSettings.profile.defaultEnvironment,
+        build: run?.meta.buildVersion || s.appSettings.profile.defaultBuildVersion,
+        expectedResult: item?.expectedResult,
+      });
+      updateResult(runId, itemId, { status, notes, testedAt: now });
+      return;
+    }
+
+    updateResult(runId, itemId, { status, testedAt: now });
   }, [updateResult]);
+
+  const attachScreenshot = useCallback((runId: string, itemId: string, result: { filename: string; relativePath: string }) => {
+    updateScenario(sc => ({
+      ...sc,
+      runs: sc.runs.map(r => {
+        if (r.id !== runId) return r;
+        const existing = r.results[itemId] || { status: 'pending' as const, notes: '', screenshots: [] };
+        return {
+          ...r,
+          results: {
+            ...r.results,
+            [itemId]: {
+              ...existing,
+              screenshots: [...existing.screenshots, { filename: result.filename, relativePath: result.relativePath, caption: '' }],
+            },
+          },
+        };
+      }),
+    }));
+  }, [updateScenario]);
 
   const addScreenshot = useCallback(async (runId: string, itemId: string) => {
     const s = stateRef.current;
@@ -546,29 +611,75 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     }
     const result = await ipc.copyScreenshot(currentPath);
     if (!result) return;
+    attachScreenshot(runId, itemId, result);
+  }, [attachScreenshot, showFlash]);
 
+  const pasteScreenshotAction = useCallback(async (runId: string, itemId: string) => {
+    const s = stateRef.current;
+    let currentPath = s.filePath;
+    if (!currentPath) {
+      currentPath = await ipc.saveScenario(null, s.scenario!);
+      if (!currentPath) {
+        showFlash('Zapisz scenariusz na dysku, aby dołączyć screenshoty.');
+        return;
+      }
+      setState(prev => ({ ...prev, filePath: currentPath }));
+    }
+    const result = await ipc.pasteScreenshot(currentPath);
+    if (!result) {
+      showFlash('Schowek nie zawiera obrazu.');
+      return;
+    }
+    attachScreenshot(runId, itemId, result);
+  }, [attachScreenshot, showFlash]);
+
+  const removeScreenshot = useCallback(async (runId: string, itemId: string, filename: string) => {
+    const s = stateRef.current;
+    if (s.filePath) {
+      await ipc.deleteScreenshot(s.filePath, filename);
+    }
     updateScenario(sc => ({
       ...sc,
       runs: sc.runs.map(r => {
         if (r.id !== runId) return r;
-        const existing = r.results[itemId] || { status: 'pending' as const, notes: '', screenshots: [] };
+        const existing = r.results[itemId];
+        if (!existing) return r;
         return {
           ...r,
           results: {
             ...r.results,
             [itemId]: {
               ...existing,
-              screenshots: [...existing.screenshots, {
-                filename: result.filename,
-                relativePath: result.relativePath,
-                caption: '',
-              }],
+              screenshots: existing.screenshots.filter(ss => ss.filename !== filename),
             },
           },
         };
       }),
     }));
-  }, [updateScenario, showFlash]);
+  }, [updateScenario]);
+
+  const updateScreenshotCaption = useCallback((runId: string, itemId: string, filename: string, caption: string) => {
+    updateScenario(sc => ({
+      ...sc,
+      runs: sc.runs.map(r => {
+        if (r.id !== runId) return r;
+        const existing = r.results[itemId];
+        if (!existing) return r;
+        return {
+          ...r,
+          results: {
+            ...r.results,
+            [itemId]: {
+              ...existing,
+              screenshots: existing.screenshots.map((ss: Screenshot) =>
+                ss.filename === filename ? { ...ss, caption } : ss
+              ),
+            },
+          },
+        };
+      }),
+    }));
+  }, [updateScenario]);
 
   const resetSection = useCallback((runId: string, sectionId: string) => {
     const s = stateRef.current;
@@ -604,6 +715,78 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
       }),
     }));
   }, [updateScenario]);
+
+  const cloneRetestRun = useCallback((sourceRunId: string, onlyFailed = false): string => {
+    const s = stateRef.current;
+    const source = s.scenario?.runs.find(r => r.id === sourceRunId);
+    if (!s.scenario || !source) return '';
+
+    const results = buildRetestResults(s.scenario, source, onlyFailed);
+    const run = createRun({
+      name: `${source.meta.name || 'Sesja'} — re-test`,
+      environment: source.meta.environment,
+      buildVersion: source.meta.buildVersion,
+      tester: source.meta.tester,
+      clonedFromRunId: sourceRunId,
+    });
+    run.results = results;
+
+    updateScenario(sc => ({ ...sc, runs: [...sc.runs, run] }));
+    setState(prev => ({ ...prev, currentRunId: run.id, currentView: 'runner', completedRunId: null }));
+    return run.id;
+  }, [updateScenario]);
+
+  const importExcelScenario = useCallback(async () => {
+    const result = await ipc.importExcel();
+    if (!result) return;
+    if ('error' in result) {
+      showFlash(result.error);
+      return;
+    }
+    setState(s => ({
+      ...s,
+      scenario: result,
+      filePath: null,
+      currentView: 'editor',
+      currentRunId: null,
+      isDirty: false,
+      pendingOpen: null,
+      appMode: 'library',
+    }));
+  }, [showFlash]);
+
+  const createYouTrackIssueAction = useCallback(async (runId: string, sectionId: string, itemId: string): Promise<string | null> => {
+    const s = stateRef.current;
+    if (!s.scenario) return null;
+    const run = s.scenario.runs.find(r => r.id === runId);
+    const section = s.scenario.sections.find(sec => sec.id === sectionId);
+    const item = section?.items.find(i => i.id === itemId);
+    if (!run || !section || !item) return null;
+
+    const prefix = item.testCaseId ? `[${item.testCaseId}] ` : '';
+    const summary = `${prefix}${item.title}`.slice(0, 255);
+    const description = buildYouTrackDescription(s.scenario, run, section, item);
+    const result = run.results[itemId];
+    const attachments = result?.screenshots?.map(ss => ({ filename: ss.filename })) || [];
+
+    const issue = await ipc.youtrackCreateIssue({
+      summary,
+      description,
+      environment: run.meta.environment,
+      buildVersion: run.meta.buildVersion,
+      scenarioPath: s.filePath || undefined,
+      attachments,
+    });
+
+    if ('error' in issue) {
+      showFlash(issue.error);
+      return null;
+    }
+
+    updateItem(sectionId, itemId, { link: issue.url });
+    showFlash(`Utworzono ${issue.idReadable} w YouTrack`);
+    return issue.url;
+  }, [showFlash, updateItem]);
 
   const getCurrentRun = useCallback((): Run | null => {
     const s = stateRef.current;
@@ -648,8 +831,16 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     updateResult,
     setItemStatus,
     addScreenshot,
+    pasteScreenshot: pasteScreenshotAction,
+    removeScreenshot,
+    updateScreenshotCaption,
     resetSection,
     bulkSetSection,
+    cloneRetestRun,
+    importExcelScenario,
+    createYouTrackIssue: createYouTrackIssueAction,
+    refreshSettings,
+    completeStartup,
     getCurrentRun,
   };
 

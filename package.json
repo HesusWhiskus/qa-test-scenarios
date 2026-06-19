@@ -1,7 +1,7 @@
 {
   "name": "qa-test-app",
   "productName": "QA Test Scenarios",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Aplikacja do zarządzania scenariuszami testowymi QA",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "uuid": "^13.0.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -33,7 +34,6 @@
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vite": "^8.0.1",
-    "xlsx": "^0.18.5"
+    "vite": "^8.0.1"
   }
 }

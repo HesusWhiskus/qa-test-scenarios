@@ -14,14 +14,21 @@ function sec(id: string, title: string, tags: string[], items: { id: string; tit
     title,
     level,
     visibilityTags: tags,
-    items: items.map(i => ({ id: i.id, title: i.title, link: i.link || '' })),
+    items: items.map(i => ({
+      id: i.id,
+      title: i.title,
+      link: i.link || '',
+      testCaseId: '',
+      preconditions: '',
+      expectedResult: '',
+    })),
   };
 }
 
 const now = '2026-01-01T00:00:00.000Z';
 
 const profilAgenta: Scenario = {
-  version: 1,
+    version: 2,
   meta: {
     title: 'Profil Agenta',
     description: 'Zarządzanie użytkownikami, struktura partnerów, uprawnienia TU, integracja iBooster',
@@ -74,7 +81,7 @@ const profilAgenta: Scenario = {
 };
 
 const strefaAgenta: Scenario = {
-  version: 1,
+    version: 2,
   meta: {
     title: 'Strefa Agenta',
     description: 'Dashboard, nawigacja, szkolenia, dokumenty, baza wiedzy, konkursy',
@@ -119,7 +126,7 @@ const strefaAgenta: Scenario = {
 };
 
 const procesSprzedazy: Scenario = {
-  version: 1,
+    version: 2,
   meta: {
     title: 'Proces sprzedaży iBooster',
     description: 'Pełna ścieżka: RODO/IDD → APK → Kalkulacja → Sprzedaż',
@@ -167,7 +174,7 @@ const procesSprzedazy: Scenario = {
 };
 
 const crm: Scenario = {
-  version: 1,
+    version: 2,
   meta: {
     title: 'CRM (Twój CRM)',
     description: 'Panel główny, kontakty, szanse sprzedaży, polisy, kalendarz, wznowienia',
@@ -217,7 +224,7 @@ const crm: Scenario = {
 };
 
 const synchronizacja: Scenario = {
-  version: 1,
+    version: 2,
   meta: {
     title: 'Synchronizacja Profil Agenta ↔ CRM',
     description: 'Spójność danych osobowych, uprawnień TU i struktury między systemami',

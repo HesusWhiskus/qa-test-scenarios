@@ -2,7 +2,7 @@
 
 ## Wymagania
 
-- Node.js 20+
+- Node.js 24+
 - npm 9+
 
 ## Uruchomienie lokalne
@@ -18,7 +18,7 @@ npm start
 npm run make
 ```
 
-Komenda zbuduje instalator dla bieżącej platformy (`.exe` na Windows, `.dmg` na macOS).
+Komenda zbuduje instalator dla bieżącej platformy (`.exe` na Windows, `.dmg` na macOS). Do publikacji dla obu systemów wystarczy wypchnąć tag — patrz sekcja poniżej.
 
 ## Wydawanie nowej wersji
 

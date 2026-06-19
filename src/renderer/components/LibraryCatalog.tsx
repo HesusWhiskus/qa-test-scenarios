@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useScenario } from '../hooks/useScenario';
-import { FilePlus, FolderOpen, LayoutTemplate, ArrowRight, ListChecks } from 'lucide-react';
+import { FilePlus, FolderOpen, LayoutTemplate, ArrowRight, ListChecks, Search, FileSpreadsheet } from 'lucide-react';
 import { loadCatalogEntries, groupByFolder, formatFolderName, type CatalogEntry } from '../lib/scenario-catalog';
+import { filterCatalogEntries } from '../lib/catalog-filter';
 
 const templateColors = [
   'from-blue-500 to-indigo-500',
@@ -38,9 +39,10 @@ function CatalogCard({ entry, colorIndex, onSelect }: { entry: CatalogEntry; col
 }
 
 export function LibraryCatalog() {
-  const { newScenario, loadFromTemplate, openScenario } = useScenario();
-  const [ready, setReady] = useState<Record<string, CatalogEntry[]>>({});
-  const [stubs, setStubs] = useState<Record<string, CatalogEntry[]>>({});
+  const { newScenario, loadFromTemplate, openScenario, importExcelScenario } = useScenario();
+  const [readyEntries, setReadyEntries] = useState<CatalogEntry[]>([]);
+  const [stubEntries, setStubEntries] = useState<CatalogEntry[]>([]);
+  const [search, setSearch] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [title, setTitle] = useState('');
 
@@ -49,11 +51,13 @@ export function LibraryCatalog() {
       loadCatalogEntries({ includeStubs: false }),
       loadCatalogEntries({ includeStubs: true }),
     ]).then(([allReady, allWithStubs]) => {
-      setReady(groupByFolder(allReady));
-      const stubOnly = allWithStubs.filter(e => e.isStub);
-      setStubs(groupByFolder(stubOnly));
+      setReadyEntries(allReady);
+      setStubEntries(allWithStubs.filter(e => e.isStub));
     });
   }, []);
+
+  const ready = groupByFolder(filterCatalogEntries(readyEntries, search));
+  const stubs = groupByFolder(filterCatalogEntries(stubEntries, search));
 
   const handleCreate = () => {
     if (title.trim()) {
@@ -94,7 +98,7 @@ export function LibraryCatalog() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-8">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         <button
           onClick={() => setShowNew(true)}
           className="flex flex-col items-center gap-2 p-5 rounded-lg bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-shadow"
@@ -113,6 +117,25 @@ export function LibraryCatalog() {
           </div>
           <span className="text-sm font-medium">Importuj JSON</span>
         </button>
+        <button
+          onClick={importExcelScenario}
+          className="flex flex-col items-center gap-2 p-5 rounded-lg bg-white dark:bg-slate-900 shadow-xs hover:shadow-card border border-slate-200/60 dark:border-slate-800 transition-shadow"
+        >
+          <div className="w-10 h-10 rounded-lg bg-violet-50 dark:bg-violet-950/50 flex items-center justify-center">
+            <FileSpreadsheet size={20} className="text-violet-600 dark:text-violet-400" />
+          </div>
+          <span className="text-sm font-medium">Importuj Excel</span>
+        </button>
+      </div>
+
+      <div className="relative mb-6">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Szukaj scenariuszy…"
+          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+        />
       </div>
 
       {showNew && (

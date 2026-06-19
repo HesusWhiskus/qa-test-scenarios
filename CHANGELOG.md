@@ -4,6 +4,23 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 
+## [1.2.0] - 2026-06-19
+
+### Added
+- Ekran profilu testera przy starcie aplikacji (tester, środowisko, build)
+- Profil testera w ustawieniach: lista środowisk, szablon notatki przy Fail
+- Screenshoty: podgląd, podpis, usuwanie, wklejanie ze schowka
+- Wyszukiwarka w katalogu scenariuszy i bibliotece
+- Eksport Markdown: pełny raport lub tylko problemy
+- Klikalne linki do issue (YouTrack)
+- Rozszerzony model TC: testCaseId, preconditions, expected result; tagi scenariusza
+- Import scenariuszy z Excel
+- Porównanie sesji testowych, re-test i re-test tylko fail, czas trwania sesji
+- Integracja YouTrack API (tworzenie issue, załączniki, wyszukiwanie) + dokumentacja YOUTRACK_SETUP.md
+
+### Fixed
+- Biały ekran w buildzie produkcyjnym (CORS / atrybut crossorigin w Vite)
+
 ## [1.1.1] - 2026-06-18
 
 ### Changed
