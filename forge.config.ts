@@ -7,6 +7,8 @@ import { MakerDMG } from '@electron-forge/maker-dmg';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    npmRebuild: false,
+    asarUnpack: '**/node_modules/xlsx/**',
     extraResource: ['./public/templates'],
     name: 'QA Test Scenarios',
     appBundleId: 'com.polskiepolisy.qa-test-scenarios',

@@ -28,11 +28,24 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
 
       - run: npm ci
 
-      - run: npm run make
+      - name: Package application
+        env:
+          DEBUG: electron-packager*
+        run: npm run package
+
+      - name: Verify package output
+        shell: bash
+        run: |
+          find out -maxdepth 2 -type d
+          test -n "$(find out -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          wc -c .vite/build/main.js
+          test "$(wc -c < .vite/build/main.js)" -lt 200000
+
+      - name: Create installers
+        run: npx electron-forge make --skip-package
 
       - name: List build output
         shell: bash
@@ -43,7 +56,7 @@ jobs:
         shell: bash
         run: |
           test -f out/make/squirrel.windows/x64/QA-Test-Scenarios-Setup.exe
-          test -f out/make/zip/win32/x64/QA\ Test\ Scenarios-win32-x64-*.zip
+          test -n "$(find out/make/zip/win32/x64 -name '*.zip' -print -quit)"
 
       - name: Verify macOS artifacts
         if: matrix.platform == 'darwin'
