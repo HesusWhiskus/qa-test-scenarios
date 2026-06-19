@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,6 +12,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -34,10 +36,21 @@ jobs:
 
       - name: List build output
         shell: bash
+        run: find out -type f 2>/dev/null | head -80 || true
+
+      - name: Verify Windows artifacts
+        if: matrix.platform == 'win32'
+        shell: bash
         run: |
-          set +o pipefail
-          find out -type f 2>/dev/null | head -80 || true
-          test -d out/make
+          test -f out/make/squirrel.windows/x64/QA-Test-Scenarios-Setup.exe
+          test -f out/make/zip/win32/x64/QA\ Test\ Scenarios-win32-x64-*.zip
+
+      - name: Verify macOS artifacts
+        if: matrix.platform == 'darwin'
+        shell: bash
+        run: |
+          test -n "$(find out/make -name '*.dmg' -print -quit)"
+          test -n "$(find out/make/zip/darwin/arm64 -name '*.zip' -print -quit)"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -63,6 +76,7 @@ jobs:
         run: find artifacts -type f | head -50
 
       - uses: softprops/action-gh-release@v3
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           draft: false
           generate_release_notes: true

@@ -1,4 +1,8 @@
+import { createRequire } from 'node:module';
 import type { Scenario } from '../renderer/types/schema';
+
+const require = createRequire(import.meta.url);
+const XLSX = require('xlsx') as typeof import('xlsx');
 
 const BDD_KEYWORDS = new Set(['given', 'when', 'then', 'and']);
 
@@ -8,7 +12,6 @@ function isBddRow(colA: string): boolean {
 
 export async function parseExcelToScenario(buffer: Buffer, fileName: string): Promise<Scenario | { error: string }> {
   try {
-    const XLSX = await import('xlsx');
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) return { error: 'Plik Excel nie zawiera arkuszy.' };
