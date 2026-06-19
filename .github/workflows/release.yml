@@ -23,29 +23,24 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
+          cache: npm
 
       - run: npm ci
 
-      - name: Package application
-        env:
-          DEBUG: electron-packager*
-        run: npm run package
-
-      - name: Verify package output
+      - name: Ensure Electron binary
         shell: bash
         run: |
-          find out -maxdepth 2 -type d
-          test -n "$(find out -mindepth 1 -maxdepth 1 -type d -print -quit)"
-          wc -c .vite/build/main.js
-          test "$(wc -c < .vite/build/main.js)" -lt 200000
+          node node_modules/electron/install.js
+          ls -la node_modules/electron/dist/ | head -10
 
-      - name: Create installers
-        run: npx electron-forge make --skip-package
+      - name: Build installers
+        shell: bash
+        run: npm run make
 
       - name: List build output
         shell: bash
@@ -57,6 +52,7 @@ jobs:
         run: |
           test -f out/make/squirrel.windows/x64/QA-Test-Scenarios-Setup.exe
           test -n "$(find out/make/zip/win32/x64 -name '*.zip' -print -quit)"
+          test "$(wc -c < .vite/build/main.js)" -lt 200000
 
       - name: Verify macOS artifacts
         if: matrix.platform == 'darwin'
@@ -64,9 +60,10 @@ jobs:
         run: |
           test -n "$(find out/make -name '*.dmg' -print -quit)"
           test -n "$(find out/make/zip/darwin/arm64 -name '*.zip' -print -quit)"
+          test "$(wc -c < .vite/build/main.js)" -lt 200000
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.platform }}
           path: |
@@ -80,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
@@ -88,7 +85,7 @@ jobs:
       - name: List artifacts
         run: find artifacts -type f | head -50
 
-      - uses: softprops/action-gh-release@v3
+      - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           draft: false
